@@ -8,7 +8,7 @@
 
     <div class="navbar-collapse collapse" id="navbar-footer">
 					<span class="navbar-text">
-						&copy; {{ date('Y') }}. <a href="#">{{ Qs::getSystemName() }}</a> by <a href="#" >CJ Inspired</a>
+						&copy; 2026 e-maaree by ABQO Technology. Developed by <a href="https://web.facebook.com/timocadaan" target="_blank" rel="noopener">Cumar Timocade</a>.
 					</span>
 
         <ul class="navbar-nav ml-lg-auto">

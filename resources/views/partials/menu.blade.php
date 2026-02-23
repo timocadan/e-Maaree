@@ -16,6 +16,11 @@
     <!-- Sidebar content -->
     <div class="sidebar-content">
 
+        <!-- App brand placeholder (until ABQO logo is uploaded) -->
+        <div class="px-3 py-2" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <span class="font-weight-bold text-white" style="font-size: 1.1rem; letter-spacing: 0.03em;">e-maaree</span>
+        </div>
+
         <!-- User menu -->
         <div class="sidebar-user">
             <div class="card-body">

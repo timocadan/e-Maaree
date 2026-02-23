@@ -1,14 +1,13 @@
 <div class="navbar navbar-expand-md navbar-dark">
     <div class="mt-2 mr-5">
-        <a href="{{ route('dashboard') }}" class="d-inline-block">
-        <h4 class="text-bold text-white">{{ Qs::getSystemName() }}</h4>
+        <a href="{{ route('dashboard') }}" class="d-inline-block text-decoration-none">
+            <span class="font-weight-bold text-white" style="font-size: 1.35rem; letter-spacing: 0.02em;">e-maaree</span>
+            @php $sysName = Qs::getSystemName(); @endphp
+            @if($sysName && $sysName !== 'e-maaree')
+                <span class="text-white-50 d-none d-md-inline ml-1" style="font-size: 0.9rem;"> · {{ $sysName }}</span>
+            @endif
         </a>
     </div>
-  {{--  <div class="navbar-brand">
-        <a href="index.html" class="d-inline-block">
-            <img src="{{ asset('global_assets/images/logo_light.png') }}" alt="">
-        </a>
-    </div>--}}
 
     <div class="d-md-none">
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-mobile">

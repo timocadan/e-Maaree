@@ -10,8 +10,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    $host = parse_url(config('app.url'), PHP_URL_HOST) ?: request()->getHost();
-    return 'Central application. Use a tenant subdomain (e.g. school1.' . $host . ') to access a school.';
+    return view('central.welcome');
 });
 
 Route::get('/debug-host', function () {

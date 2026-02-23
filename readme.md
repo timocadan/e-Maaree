@@ -1,123 +1,113 @@
-## **Laravel School Management System** 
+# e-maaree
 
-**LAVSMS** is developed for educational institutions like schools and colleges built on Laravel 8
+**Multi-tenant School Management System** for K–12 schools and colleges. Each school runs on its own subdomain with full data isolation.
 
-**SCREENSHOTS** 
+**Developed by [ABQO Technology](https://web.facebook.com/timocadaan)**  
+**Lead Developer:** Cumar Timocade
 
-**Dashboard**
-<img src="https://i.ibb.co/D4T0z6T/dashboard.png" alt="dashboard" border="0">
+---
 
-**Login**
-<img src="https://i.ibb.co/Rh1Bfwk/login.png" alt="login" border="0">
+## Overview
 
-**Student Marksheet**
-<img src="https://i.ibb.co/GCgv5ZR/marksheet.png" alt="marksheet" border="0">
+e-maaree is built on **Laravel 8** and **[stancl/tenancy](https://tenancyforlaravel.com/)**. It provides:
 
-**System Settings**
-<img src="https://i.ibb.co/Kmrhw69/system-settings.png" alt="system-settings" border="0">
+- **Central (landlord) app** – landing and tenant provisioning
+- **Tenant app** – full school management per subdomain (e.g. `school1.yourdomain.com`)
+- **Roles:** Super Admin, Admin, Teacher, Accountant, Librarian, Student, Parent
+- **Features:** Students, Classes, Sections, Subjects, Exams, Grades, Marks, Timetables, Payments, Pins, Dorms, and more
 
-**Print Marksheet**
-<div style="clear: both"> </div>
-<img src="https://i.ibb.co/5c1GHCj/capture-20210530-115521-crop.png" alt="print-marksheet">
+---
 
-**Print Tabulation Sheet & Marksheet**
-<img src="https://i.ibb.co/QmscPfn/capture-20210530-115802.png" alt="tabulation-sheet" border="0">
+## Requirements
 
-<hr />  
+- PHP ^7.2 | ^8.0
+- Composer
+- Node.js & NPM (for front-end assets)
+- MySQL / MariaDB
+- Laravel 8.x requirements: [Laravel 8 Docs](https://laravel.com/docs/8.x)
 
-There are 7 types of user accounts. They include:
- 
-Administrators (Super Admin & Admin)
-- Librarian
-- Accountant
-- Teacher
-- Student
-- Parent
+---
 
-**Requirements** 
+## Installation
 
-Check Laravel 8 Requirements https://laravel.com/docs/8.x
+1. **Clone or download** the repository.
+2. **Install PHP dependencies:**
+   ```bash
+   composer install
+   ```
+3. **Copy environment file and configure:**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+   Edit `.env`: set `APP_NAME=e-maaree`, `APP_URL`, and database credentials (`DB_DATABASE=emaaree_db`, etc.).
+4. **Create the database** (e.g. `emaaree_db`) and run migrations:
+   ```bash
+   php artisan migrate
+   ```
+5. **Seed central and (optionally) tenant data:**
+   ```bash
+   php artisan db:seed
+   ```
+6. **Create a tenant (school)** and run tenant migrations/seed:
+   ```bash
+   php artisan tenancy:create "My School" school1.localhost --id=school1
+   ```
+7. **NPM (optional, for assets):**
+   ```bash
+   npm install && npm run dev
+   ```
 
-**Installation**
-- Install dependencies (composer install)
-- Set Database Credentials & App Settings in dotenv file (.env)
-- Migrate Database (php artisan migrate)
-- Database seed (php artisan db:seed)
+---
 
-**Login Credentials**
-After seeding. Login details as follows:
+## Default login (after seeding)
 
-| Account Type  | Username | Email | Password |
-| ------------- | -------- | ----- | -------- |
-| Super Admin | cj | cj@cj.com | cj |
-|  Admin | admin | admin@admin.com | cj |
-|  Teacher | teacher | teacher@teacher.com | cj |
-|  Parent | parent | parent@parent.com | cj |
-|  Accountant | accountant | accountant@accountant.com | cj |
-|  Student | student | student@student.com | cj |
+| Account   | Username    | Email                     | Password  |
+|----------|-------------|---------------------------|-----------|
+| Super Admin | superadmin | superadmin@emaaree.test   | password  |
+| Admin    | admin       | admin@admin.com           | password  |
+| Teacher  | teacher     | teacher@teacher.com       | password  |
+| Parent   | parent      | parent@parent.com         | password  |
+| Accountant | accountant | accountant@accountant.com | password  |
+| Student  | student     | student@student.com       | password  |
 
-#### **FUNCTIONS OF ACCOUNTS** 
+*(Change default passwords in production.)*
 
-**-- SUPER ADMIN**
-- Only Super Admin can delete any record
-- Create any user account
- 
-**-- Administrators (Super Admin & Admin)**
+---
 
-- Manage students class/sections
-- View marksheet of students
-- Create, Edit and manage all user accounts & profiles
-- Create, Edit and manage Exams & Grades
-- Create, Edit and manage Subjects
-- Manage noticeboard of school
-- Notices are visible in calendar in dashboard
-- Edit system settings
-- Manage Payments & fees
+## Running the app
 
-**-- ACCOUNTANT**
-- Manage Payments & fees
-- Print Payment Receipts
+- **Central (landlord):** Visit `APP_URL` (e.g. `http://localhost:8001`).
+- **Tenant (school):** Use the tenant subdomain (e.g. `http://school1.localhost:8001`). Ensure the host resolves (e.g. `127.0.0.1 school1.localhost` in `hosts`).
 
-**-- LIBRARIAN**
-- Manage Books in the Library
+```bash
+php artisan serve --port=8001
+```
 
-**-- TEACHER**
-- Manage Own Class/Section
-- Manage Exam Records for own Subjects
-- Manage Timetable if Assigned as Class Teacher
-- Manage own profile
-- Upload Study Materials
+---
 
-**-- STUDENT**
-- View teacher profile
-- View own class subjects
-- View own marks and class timetable
-- View Payments
-- View library and book status
-- View noticeboard and school events in calendar
-- Manage own profile
+## Project structure (branding)
 
-**-- PARENT**
-- View teacher profile
-- View own child's marksheet (Download/Print PDF)
-- View own child's Timetable
-- View own child's payments
-- View noticeboard and school events in calendar
-- Manage own profile
+- **Product name:** e-maaree  
+- **Company:** ABQO Technology  
+- **Lead developer:** Cumar Timocade – [Facebook](https://web.facebook.com/timocadaan)  
+- **License:** MIT © 2026 ABQO Technology  
 
-### **Contributing**
+---
 
-Your Contributions & suggestions are welcomed. Please use Pull Request
+## Security
 
-### **Security Vulnerabilities**
+If you discover a security vulnerability, please report it to **ABQO Technology** responsibly. Do not open public issues for security-sensitive matters.
 
-If you discover a security vulnerability within LAV_SMS, please send an e-mail to CJ Inspired via cjay.pub@gmail.com. All security vulnerabilities will be promptly addressed.
+---
 
-***Please Note*** that some sections of this project are in the work-in-progress stage and would be updated soon. These include:
+## Contributing
 
-- The Noticeboard/Calendar in the Dashboard Area
-- Librarian/Acountant user pages
-- Library Resources/Study Materials Upload for Students
+Contributions and suggestions are welcome via Pull Requests.
 
-### **Contact [CJ INSPIRED]**
-- Phone : +2347068149559
+---
+
+## License
+
+This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.  
+Copyright (c) 2026 ABQO Technology.

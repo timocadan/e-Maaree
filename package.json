@@ -1,4 +1,6 @@
 {
+    "name": "e-maaree",
+    "description": "e-maaree School Management System – ABQO Technology",
     "private": true,
     "scripts": {
         "dev": "npm run development",

@@ -1,7 +1,7 @@
 {
-    "name": "laravel/laravel",
-    "description": "The Laravel Framework.",
-    "keywords": ["framework", "laravel"],
+    "name": "abqo-technology/e-maaree",
+    "description": "e-maaree – Multi-tenant School Management System by ABQO Technology.",
+    "keywords": ["school", "management", "multi-tenant", "laravel", "education", "e-maaree", "abqo"],
     "license": "MIT",
     "type": "project",
     "require": {

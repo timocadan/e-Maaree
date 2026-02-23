@@ -1,0 +1,58 @@
+/**
+ * e-maaree brand – ABQO Technology
+ * Red #D32F2F, Black #1A1A1A, White #FFFFFF
+ */
+
+/* Primary / Red */
+.text-primary, .text-primary[href]:hover, .text-primary[href]:focus { color: #D32F2F !important; }
+.bg-primary { background-color: #D32F2F !important; }
+.border-primary { border-color: #D32F2F !important; }
+.btn-primary { background-color: #D32F2F; border-color: #D32F2F; }
+.btn-primary:hover, .btn-primary:focus { background-color: #b71c1c; border-color: #b71c1c; }
+.alpha-primary { background-color: #ffebee; }
+
+/* Sidebar – Black */
+.sidebar.sidebar-dark,
+.sidebar-main.sidebar-dark { background-color: #1A1A1A !important; }
+.sidebar-dark .sidebar-mobile-toggler:not([class*=bg-]) { background-color: #111 !important; }
+.sidebar-dark .nav-sidebar .nav-link:not(.disabled):hover,
+.sidebar-dark .nav-sidebar .nav-item > .nav-link.active,
+.sidebar-dark .nav-sidebar > .nav-item-open > .nav-link:not(.disabled),
+.sidebar-dark .nav-sidebar > .nav-item > .nav-link.active,
+.sidebar-dark[class*=bg-] .nav-sidebar > .nav-item-open > .nav-link:not(.disabled),
+.sidebar-dark[class*=bg-] .nav-sidebar > .nav-item > .nav-link.active {
+  background-color: #D32F2F !important;
+  color: #fff !important;
+}
+.sidebar-dark .nav-sidebar > .nav-item-submenu > .nav-group-sub { background-color: rgba(0,0,0,.25) !important; }
+
+/* Top navbar – Black */
+.navbar.navbar-dark { background-color: #1A1A1A !important; border-bottom-color: rgba(255,255,255,.1); }
+.navbar-dark .navbar-nav-link:hover, .navbar-dark .navbar-nav-link:focus,
+.navbar-dark .show > .navbar-nav-link, .navbar-dark .active > .navbar-nav-link { background-color: rgba(211,47,47,.25) !important; }
+
+/* Main content – White */
+.content-wrapper { background-color: #FFFFFF !important; }
+.content { background-color: #FFFFFF !important; }
+.page-header.page-header-light { background-color: #FFFFFF !important; border-bottom-color: #eee; }
+
+/* Cards and body – only plain cards get white; stat cards keep their bg */
+body { background-color: #f5f5f5; }
+.card:not([class*="bg-"]) { background-color: #FFFFFF; }
+
+/* Dashboard stat cards – brand palette */
+.dashboard-stat-card.bg-brand-red { background-color: #D32F2F !important; color: #fff !important; }
+.dashboard-stat-card.bg-brand-red h3, .dashboard-stat-card.bg-brand-red .font-size-xs { color: #fff !important; }
+.dashboard-stat-card.bg-brand-black { background-color: #1A1A1A !important; color: #fff !important; }
+.dashboard-stat-card.bg-brand-black h3, .dashboard-stat-card.bg-brand-black .font-size-xs { color: #fff !important; }
+.dashboard-stat-card.bg-brand-teal { background-color: #00695C !important; color: #fff !important; }
+.dashboard-stat-card.bg-brand-teal h3, .dashboard-stat-card.bg-brand-teal .font-size-xs { color: #fff !important; }
+.dashboard-stat-card.bg-brand-slate { background-color: #455A64 !important; color: #fff !important; }
+.dashboard-stat-card.bg-brand-slate h3, .dashboard-stat-card.bg-brand-slate .font-size-xs { color: #fff !important; }
+.dashboard-stat-card .icon-3x { opacity: 0.9; }
+
+/* Links and buttons in content */
+a:not(.navbar-nav-link):not(.nav-link):not(.dropdown-item) { color: #D32F2F; }
+a:not(.navbar-nav-link):not(.nav-link):not(.dropdown-item):hover { color: #b71c1c; }
+.btn-link { color: #D32F2F !important; }
+.btn-link:hover { color: #b71c1c !important; }

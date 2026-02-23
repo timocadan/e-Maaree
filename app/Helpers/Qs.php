@@ -26,7 +26,7 @@ class Qs
 
     public static function getAppCode()
     {
-        return self::getSetting('system_title') ?: 'CJ';
+        return self::getSetting('system_title') ?: 'e-maaree';
     }
 
     public static function getDefaultUserImage()
@@ -275,7 +275,11 @@ class Qs
 
     public static function getSystemName()
     {
-        return self::getSetting('system_name');
+        $name = self::getSetting('system_name');
+        if (empty($name) || strcasecmp(trim($name), 'CJ INSPIRED ACADEMY') === 0) {
+            return 'e-maaree';
+        }
+        return $name;
     }
 
     public static function findMyChildren($parent_id)
