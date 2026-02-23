@@ -7,26 +7,15 @@ use Illuminate\Database\Seeder;
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
+     * Seed the central (landlord) database.
+     * Only central/landlord seeders belong here.
+     * Tenant-specific data is seeded via TenantDatabaseSeeder when a tenant is created.
      *
      * @return void
      */
     public function run()
     {
-        $this->call(BloodGroupsTableSeeder::class);
-        $this->call(GradesTableSeeder::class);
-        $this->call(DormsTableSeeder::class);
-        $this->call(ClassTypesTableSeeder::class);
-        $this->call(UserTypesTableSeeder::class);
-        $this->call(MyClassesTableSeeder::class);
-        $this->call(NationalitiesTableSeeder::class);
-        $this->call(StatesTableSeeder::class);
-        $this->call(LgasTableSeeder::class);
-        $this->call(SettingsTableSeeder::class);
-        $this->call(UsersTableSeeder::class);
-        $this->call(SubjectsTableSeeder::class);
-        $this->call(SectionsTableSeeder::class);
-        $this->call(StudentRecordsTableSeeder::class);
-        $this->call(SkillsTableSeeder::class);
+        // Central database seeders only (e.g. optional landlord data).
+        // Tenant data is seeded by TenantDatabaseSeeder in tenant context.
     }
 }
