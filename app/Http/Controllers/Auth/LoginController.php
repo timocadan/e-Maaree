@@ -22,10 +22,23 @@ class LoginController extends Controller
 
     /**
      * Where to redirect users after login.
+     * Central (landlord) domain → dashboard; tenant domain → /home.
      *
      * @var string
      */
     protected $redirectTo = '/home';
+
+    /**
+     * Redirect path after login (central vs tenant).
+     */
+    public function redirectTo()
+    {
+        $centralDomains = config('tenancy.central_domains', ['localhost', '127.0.0.1']);
+        if (in_array(request()->getHost(), $centralDomains)) {
+            return '/dashboard';
+        }
+        return $this->redirectTo;
+    }
 
     /**
      * Create a new controller instance.

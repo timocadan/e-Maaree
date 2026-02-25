@@ -11,10 +11,19 @@
 
 e-maaree is built on **Laravel 8** and **[stancl/tenancy](https://tenancyforlaravel.com/)**. It provides:
 
-- **Central (landlord) app** – landing and tenant provisioning
+- **Central (landlord) app** – landing, **SaaS Control Center** (Landlord Dashboard), and tenant provisioning
 - **Tenant app** – full school management per subdomain (e.g. `school1.yourdomain.com`)
 - **Roles:** Super Admin, Admin, Teacher, Accountant, Librarian, Student, Parent
 - **Features:** Students, Classes, Sections, Subjects, Exams, Grades, Marks, Timetables, Payments, Pins, Dorms, and more
+
+### Landlord Dashboard (SaaS Control Center)
+
+- **School list** – view all tenants (schools) with ID, name, domain(s), status, and created date
+- **Search** – filter schools by name, ID, or domain (instant search)
+- **Suspend / Activate** – toggle school status (active ↔ suspended); suspended schools cannot access their dashboard and see a contact message (ABQO Technology)
+- **Manage** – edit school name and domain, reset super admin password
+- **Delete** – remove a school and its database (with confirmation)
+- **Add New School** – create a tenant with ID, name, and domain
 
 ---
 

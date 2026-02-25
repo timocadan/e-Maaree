@@ -31,6 +31,18 @@ class RegisterController extends Controller
     protected $redirectTo = '/home';
 
     /**
+     * Redirect path after registration (central → dashboard).
+     */
+    public function redirectTo()
+    {
+        $centralDomains = config('tenancy.central_domains', ['localhost', '127.0.0.1']);
+        if (in_array(request()->getHost(), $centralDomains)) {
+            return '/dashboard';
+        }
+        return $this->redirectTo;
+    }
+
+    /**
      * Create a new controller instance.
      *
      * @return void

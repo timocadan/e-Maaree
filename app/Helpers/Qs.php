@@ -256,21 +256,47 @@ class Qs
         return round(pow(1024, $base - floor($base)), $precision) .' '. $suffixes[floor($base)];
     }
 
+    /**
+     * Get a setting from the tenant DB. Safe to call before tenancy is initialized:
+     * returns sensible defaults and never queries the central DB (settings table is tenant-only).
+     */
     public static function getSetting($type)
     {
-        return Setting::where('type', $type)->first()->description;
+        if (! app()->bound(\Stancl\Tenancy\Tenancy::class) || ! app(\Stancl\Tenancy\Tenancy::class)->initialized) {
+            return self::getSettingDefault($type);
+        }
+        $setting = Setting::where('type', $type)->first();
+        return $setting ? $setting->description : '';
+    }
+
+    /**
+     * Defaults when tenancy is not initialized (central context or boot). Prevents querying central DB.
+     */
+    protected static function getSettingDefault(string $type): string
+    {
+        $y = (int) date('Y');
+        $defaults = [
+            'current_session' => $y . '-' . ($y + 1),
+            'system_name' => 'e-maaree',
+            'system_title' => 'e-maaree',
+        ];
+        return $defaults[$type] ?? '';
     }
 
     public static function getCurrentSession()
     {
-        return self::getSetting('current_session');
+        return self::getSetting('current_session') ?: (date('Y') . '-' . (date('Y') + 1));
     }
 
     public static function getNextSession()
     {
         $oy = self::getCurrentSession();
-        $old_yr = explode('-', $oy);
-        return ++$old_yr[0].'-'.++$old_yr[1];
+        $parts = explode('-', $oy);
+        if (count($parts) !== 2) {
+            $y = (int) date('Y');
+            return $y . '-' . ($y + 1);
+        }
+        return ((int) $parts[0] + 1) . '-' . ((int) $parts[1] + 1);
     }
 
     public static function getSystemName()
