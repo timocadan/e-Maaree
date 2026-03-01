@@ -83,3 +83,58 @@ a:not(.navbar-nav-link):not(.nav-link):not(.dropdown-item):hover { color: #b71c1
   left: auto;
   right: 0;
 }
+
+/* Manage Levels – action links: grey by default, blue/red on hover */
+.action-link,
+a.action-link,
+button.action-link {
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+  color: #6c757d !important; /* Grey by default */
+  border: none !important;
+  background: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  font-family: inherit !important;
+  line-height: inherit !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+.edit-link:hover {
+  color: #007bff !important; /* Blue on hover */
+  text-decoration: underline !important;
+}
+.delete-link:hover {
+  color: #D32F2F !important; /* Red on hover */
+  text-decoration: underline !important;
+}
+.separator {
+  color: #dee2e6 !important;
+  margin: 0 10px !important;
+}
+
+/* Wizard validation: error labels do not push layout (no scroll jump on Next) */
+.steps-validation .validation-invalid-label,
+.steps-validation label.error,
+.validation-invalid-label,
+label.error {
+  display: block !important;
+  margin-top: 2px !important;
+  font-size: 85% !important;
+  position: absolute !important;
+  left: 0;
+  top: 100%;
+  z-index: 1;
+}
+.steps-validation .form-group,
+#ajax-reg .form-group {
+  position: relative !important;
+  margin-bottom: 25px !important;
+}
+.steps-validation .form-group.mb-0,
+#ajax-reg .form-group.mb-0 {
+  margin-bottom: 25px !important;
+}

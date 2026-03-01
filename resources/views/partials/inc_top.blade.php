@@ -17,6 +17,8 @@
 <link href="{{ asset('assets/css/qs.css') }}" rel="stylesheet" type="text/css">
 {{-- e-maaree brand (Red, Black, White) --}}
 <link href="{{ asset('assets/css/brand.css') }}" rel="stylesheet" type="text/css">
+{{-- FontAwesome 6 --}}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
 
 {{--   Core JS files --}}
     <script src="{{ asset('global_assets/js/main/jquery.min.js') }} "></script>

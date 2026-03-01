@@ -32,10 +32,13 @@ class SettingController extends Controller
     {
         $sets = $req->except('_token', '_method', 'logo');
         $sets['lock_exam'] = $sets['lock_exam'] == 1 ? 1 : 0;
-        $keys = array_keys($sets);
-        $values = array_values($sets);
-        for($i=0; $i<count($sets); $i++){
-            $this->setting->update($keys[$i], $values[$i]);
+
+        foreach ($sets as $key => $value) {
+            if (strpos($key, 'next_term_fees_') === 0) {
+                $this->setting->updateOrCreate($key, $value ?? '');
+            } else {
+                $this->setting->update($key, $value);
+            }
         }
 
         if($req->hasFile('logo')) {

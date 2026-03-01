@@ -12,6 +12,14 @@ class SettingRepo
         return Setting::where('type', $type)->update(['description' => $desc]);
     }
 
+    public function updateOrCreate($type, $description)
+    {
+        return Setting::updateOrCreate(
+            ['type' => $type],
+            ['description' => (string) $description]
+        );
+    }
+
     public function getSetting($type)
     {
         return Setting::where('type', $type)->get();

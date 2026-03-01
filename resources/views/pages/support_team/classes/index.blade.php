@@ -9,6 +9,13 @@
         </div>
 
         <div class="card-body">
+            @if(!empty($filter_class_type))
+                <div class="alert alert-info border-0 alert-dismissible mb-3">
+                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                    Showing classes for level: <strong>{{ $filter_class_type->name }}</strong>.
+                    <a href="{{ route('classes.index') }}" class="alert-link ml-2">Show all classes</a>
+                </div>
+            @endif
             <ul class="nav nav-tabs nav-tabs-highlight">
                 <li class="nav-item"><a href="#all-classes" class="nav-link active" data-toggle="tab">Manage Classes</a></li>
                 <li class="nav-item"><a href="#new-class" class="nav-link" data-toggle="tab"><i class="icon-plus2"></i> Create New Class</a></li>

@@ -30,9 +30,11 @@ class StudentRecordCreate extends FormRequest
             'photo' => 'sometimes|nullable|image|mimes:jpeg,gif,png,jpg|max:2048',
             'address' => 'required|string|min:6|max:120',
             'bg_id' => 'sometimes|nullable',
-            'state_id' => 'required',
-            'lga_id' => 'required',
-            'nal_id' => 'required',
+            'state_id' => 'sometimes|nullable',
+            'lga_id' => 'sometimes|nullable',
+            'nal_id' => 'sometimes|nullable',
+            'parent_name' => 'required|string|min:2|max:150',
+            'parent_phone' => 'required|string|min:6|max:20',
             'my_class_id' => 'required',
             'section_id' => 'required',
             'my_parent_id' => 'sometimes|nullable',
@@ -51,6 +53,8 @@ class StudentRecordCreate extends FormRequest
             'lga_id' => 'LGA',
             'bg_id' => 'Blood Group',
             'my_parent_id' => 'Parent',
+            'parent_name' => 'Parent Name',
+            'parent_phone' => 'Parent Phone',
         ];
     }
 
@@ -58,7 +62,7 @@ class StudentRecordCreate extends FormRequest
     {
         $input = $this->all();
 
-        $input['my_parent_id'] = $input['my_parent_id'] ? Qs::decodeHash($input['my_parent_id']) : NULL;
+        $input['my_parent_id'] = isset($input['my_parent_id']) && $input['my_parent_id'] ? Qs::decodeHash($input['my_parent_id']) : null;
 
         $this->getInputSource()->replace($input);
 

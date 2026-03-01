@@ -22,10 +22,17 @@ class MyClassController extends Controller
         $this->user = $user;
     }
 
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        $d['my_classes'] = $this->my_class->all();
+        $query = $this->my_class->getClassQuery();
+        $classTypeId = $request->query('class_type_id');
+        if ($classTypeId) {
+            $query->where('class_type_id', $classTypeId);
+        }
+        $d['my_classes'] = $query->get();
         $d['class_types'] = $this->my_class->getTypes();
+        $d['filter_class_type_id'] = $classTypeId;
+        $d['filter_class_type'] = $classTypeId ? $this->my_class->findType($classTypeId) : null;
 
         return view('pages.support_team.classes.index', $d);
     }

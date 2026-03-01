@@ -14,7 +14,13 @@ e-maaree is built on **Laravel 8** and **[stancl/tenancy](https://tenancyforlara
 - **Central (landlord) app** – landing, **SaaS Control Center** (Landlord Dashboard), and tenant provisioning
 - **Tenant app** – full school management per subdomain (e.g. `school1.yourdomain.com`)
 - **Roles:** Super Admin, Admin, Teacher, Accountant, Librarian, Student, Parent
-- **Features:** Students, Classes, Sections, Subjects, Exams, Grades, Marks, Timetables, Payments, Pins, Dorms, and more
+- **Features:** Students, Classes, Sections, Subjects, Exams, Grades, Marks, Timetables, Payments, Pins, Dorms, **Levels (Class Types)**, and more
+
+### Recent updates (e-maaree)
+
+- **Super Admin – Manage Levels (Class Types)** – Define educational levels (e.g. Primary, Secondary). Used for classes, fees, and reports. Routes: `POST /super_admin/levels/{id}/update`, `GET /super_admin/levels/{id}/delete`.
+- **Simplified Admit Student form** – Two-step wizard: **Step 1** – Personal data (name, address, gender, phone, DOB, **parent name**, **parent phone**). **Step 2** – Student data (class, section, year admitted, admission number). Dormitory, nationality/state/LGA, blood group, and passport photo are hidden for a lean MVP.
+- **Smart Admission** – Parent is resolved by **parent phone**: if a user with `user_type = parent` and the given phone exists, the student is linked to that parent; otherwise a new parent user is created (name, phone, default password `123456`). No need to pick from a long parent list.
 
 ### Landlord Dashboard (SaaS Control Center)
 

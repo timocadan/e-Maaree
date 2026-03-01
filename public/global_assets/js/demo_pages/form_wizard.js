@@ -138,9 +138,9 @@ var FormWizard = function() {
             bodyTag: 'fieldset',
             titleTemplate: '<span class="number">#index#</span> #title#',
             labels: {
-                previous: '<i class="icon-arrow-left13 mr-2" /> Previous',
-                next: 'Next <i class="icon-arrow-right14 ml-2" />',
-                finish: 'Submit form <i class="icon-arrow-right14 ml-2" />'
+                previous: 'Previous',
+                next: 'Next',
+                finish: 'Submit form'
             },
             transitionEffect: 'fade',
             autoFocus: true,
@@ -172,15 +172,40 @@ var FormWizard = function() {
         });
 
 
-        // Initialize validation
+        // Initialize validation (no scroll, no focus on invalid – prevents layout jump)
+        $.validator.setDefaults({ focusInvalid: false });
         $('.steps-validation').validate({
             ignore: 'input[type=hidden], .select2-search__field', // ignore hidden fields
             errorClass: 'validation-invalid-label',
+            focusInvalid: false,
+            onkeyup: function(element) {
+                if (element.name in this.submitted || element.name in this.invalid) {
+                    this.element(element);
+                }
+            },
+            onfocusout: function(element) {
+                this.element(element);
+            },
             highlight: function(element, errorClass) {
                 $(element).removeClass(errorClass);
             },
             unhighlight: function(element, errorClass) {
                 $(element).removeClass(errorClass);
+                // Ensure error label (red x + text) is removed when field becomes valid
+                var $el = $(element);
+                var name = element.name;
+                $el.siblings('.validation-invalid-label, label.error').remove();
+                $el.closest('.form-group').find('.validation-invalid-label, label.error').remove();
+                try {
+                    $('#ajax-reg #' + name + '-error').remove();
+                } catch (e) {}
+            },
+            invalidHandler: function(event, validator) {
+                var scrollTop = $(window).scrollTop();
+                $('html, body').scrollTop(scrollTop);
+                setTimeout(function() { $('html, body').scrollTop(scrollTop); }, 0);
+                setTimeout(function() { $('html, body').scrollTop(scrollTop); }, 50);
+                setTimeout(function() { $('html, body').scrollTop(scrollTop); }, 100);
             },
 
             // Different components require proper error label placement

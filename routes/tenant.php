@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\SuperAdmin\LevelsController;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -182,10 +183,16 @@ Route::middleware([
     });
 
     /************************ SUPER ADMIN ****************************/
+    /* Level routes are inside tenancy middleware above; prefix is 'super_admin' so paths are /levels/... only */
     Route::group(['namespace' => 'SuperAdmin', 'middleware' => 'super_admin', 'prefix' => 'super_admin'], function () {
 
         Route::get('/settings', 'SettingController@index')->name('settings');
         Route::put('/settings', 'SettingController@update')->name('settings.update');
+
+        Route::get('/levels', [LevelsController::class, 'index'])->name('levels.index');
+        Route::post('/levels', [LevelsController::class, 'store'])->name('levels.store');
+        Route::post('/levels/{level_id}/update', [LevelsController::class, 'update'])->name('levels.update');
+        Route::get('/levels/{level_id}/delete', [LevelsController::class, 'destroy'])->name('levels.delete');
 
     });
 

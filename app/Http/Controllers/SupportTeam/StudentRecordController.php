@@ -11,6 +11,7 @@ use App\Repositories\MyClassRepo;
 use App\Repositories\StudentRepo;
 use App\Repositories\UserRepo;
 use App\Http\Controllers\Controller;
+use App\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -53,6 +54,29 @@ class StudentRecordController extends Controller
     {
        $data =  $req->only(Qs::getUserRecord());
        $sr =  $req->only(Qs::getStudentData());
+
+        // Smart Admission: resolve or create parent from Step 1 (parent_name, parent_phone)
+        $parentPhone = trim($req->parent_phone);
+        $parentUser = User::where('user_type', 'parent')->where('phone', $parentPhone)->first();
+        if ($parentUser) {
+            $sr['my_parent_id'] = $parentUser->id;
+        } else {
+            $parentName = trim($req->parent_name);
+            $code = 'PAR-' . strtoupper(Str::random(8));
+            while (User::where('code', $code)->exists()) {
+                $code = 'PAR-' . strtoupper(Str::random(8));
+            }
+            $parentUser = $this->user->create([
+                'name' => ucwords($parentName),
+                'phone' => $parentPhone,
+                'user_type' => 'parent',
+                'code' => $code,
+                'username' => $code,
+                'password' => Hash::make('123456'),
+                'photo' => Qs::getDefaultUserImage(),
+            ]);
+            $sr['my_parent_id'] = $parentUser->id;
+        }
 
         $ct = $this->my_class->findTypeByClass($req->my_class_id)->code;
        /* $ct = ($ct == 'J') ? 'JSS' : $ct;
