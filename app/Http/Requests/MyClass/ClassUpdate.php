@@ -21,6 +21,7 @@ class ClassUpdate extends FormRequest
     {
         return [
             'name' => 'required|string|min:3',
+            'teacher_id' => 'nullable|exists:users,id',
         ];
     }
 }

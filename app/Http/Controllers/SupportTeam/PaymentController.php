@@ -13,6 +13,7 @@ use App\Repositories\PaymentRepo;
 use App\Repositories\StudentRepo;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use PDF;
 
@@ -27,7 +28,7 @@ class PaymentController extends Controller
         $this->year = Qs::getCurrentSession();
         $this->student = $student;
 
-        $this->middleware('teamAccount');
+        $this->middleware('teamAccount')->except(['invoice', 'receipts', 'pdf_receipts']);
     }
 
     public function index()
@@ -68,11 +69,23 @@ class PaymentController extends Controller
 
     public function invoice($st_id, $year = NULL)
     {
-        if(!$st_id) {return Qs::goWithDanger();}
+        $user_id = Qs::decodeHash($st_id);
+        if ($user_id === null) {
+            abort(404);
+        }
+        if (Qs::userIsStudent()) {
+            if ((int) $user_id !== (int) Auth::id()) {
+                return redirect()->route('dashboard')->with('flash_danger', __('msg.denied'));
+            }
+        } elseif (!Qs::userIsTeamAccount()) {
+            return redirect()->route('dashboard')->with('flash_danger', __('msg.denied'));
+        }
 
-        $inv = $year ? $this->pay->getAllMyPR($st_id, $year) : $this->pay->getAllMyPR($st_id);
-
-        $d['sr'] = $this->student->findByUserId($st_id)->first();
+        $inv = $year ? $this->pay->getAllMyPR($user_id, $year) : $this->pay->getAllMyPR($user_id);
+        $d['sr'] = $this->student->findByUserId($user_id)->first();
+        if (!$d['sr']) {
+            return Qs::goWithDanger('dashboard');
+        }
         $pr = $inv->get();
         $d['uncleared'] = $pr->where('paid', 0);
         $d['cleared'] = $pr->where('paid', 1);
@@ -82,13 +95,22 @@ class PaymentController extends Controller
 
     public function receipts($pr_id)
     {
-        if(!$pr_id) {return Qs::goWithDanger();}
-
+        $record_id = Qs::decodeHash($pr_id);
+        if ($record_id === null) {
+            abort(404);
+        }
         try {
-             $d['pr'] = $pr = $this->pay->getRecord(['id' => $pr_id])->with('receipt')->first();
+             $d['pr'] = $pr = $this->pay->getRecord(['id' => $record_id])->with('receipt')->first();
         } catch (ModelNotFoundException $ex) {
             return back()->with('flash_danger', __('msg.rnf'));
         }
+        if (Qs::userIsStudent() && (int) $pr->student_id !== (int) Auth::id()) {
+            return redirect()->route('dashboard')->with('flash_danger', __('msg.denied'));
+        }
+        if (!Qs::userIsStudent() && !Qs::userIsTeamAccount()) {
+            return redirect()->route('dashboard')->with('flash_danger', __('msg.denied'));
+        }
+
         $d['receipts'] = $pr->receipt;
         $d['payment'] = $pr->payment;
         $d['sr'] = $this->student->findByUserId($pr->student_id)->first();
@@ -101,12 +123,20 @@ class PaymentController extends Controller
 
     public function pdf_receipts($pr_id)
     {
-        if(!$pr_id) {return Qs::goWithDanger();}
-
+        $record_id = Qs::decodeHash($pr_id);
+        if ($record_id === null) {
+            abort(404);
+        }
         try {
-            $d['pr'] = $pr = $this->pay->getRecord(['id' => $pr_id])->with('receipt')->first();
+            $d['pr'] = $pr = $this->pay->getRecord(['id' => $record_id])->with('receipt')->first();
         } catch (ModelNotFoundException $ex) {
             return back()->with('flash_danger', __('msg.rnf'));
+        }
+        if (Qs::userIsStudent() && (int) $pr->student_id !== (int) Auth::id()) {
+            return redirect()->route('dashboard')->with('flash_danger', __('msg.denied'));
+        }
+        if (!Qs::userIsStudent() && !Qs::userIsTeamAccount()) {
+            return redirect()->route('dashboard')->with('flash_danger', __('msg.denied'));
         }
         $d['receipts'] = $pr->receipt;
         $d['payment'] = $pr->payment;
@@ -132,6 +162,10 @@ class PaymentController extends Controller
 
     public function pay_now(Request $req, $pr_id)
     {
+        $pr_id = Qs::decodeHash($pr_id);
+        if ($pr_id === null) {
+            abort(404);
+        }
         $this->validate($req, [
             'amt_paid' => 'required|numeric'
         ], [], ['amt_paid' => 'Amount Paid']);
@@ -211,6 +245,10 @@ class PaymentController extends Controller
 
     public function edit($id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $d['payment'] = $pay = $this->pay->find($id);
 
         return is_null($pay) ? Qs::goWithDanger('payments.index') : view('pages.support_team.payments.edit', $d);
@@ -218,6 +256,10 @@ class PaymentController extends Controller
 
     public function update(PaymentUpdate $req, $id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $data = $req->all();
         $this->pay->update($id, $data);
 
@@ -226,6 +268,10 @@ class PaymentController extends Controller
 
     public function destroy($id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $this->pay->find($id)->delete();
 
         return Qs::deleteOk('payments.index');
@@ -233,6 +279,10 @@ class PaymentController extends Controller
 
     public function reset_record($id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $pr['amt_paid'] = $pr['paid'] = $pr['balance'] = 0;
         $this->pay->updateRecord($id, $pr);
         $this->pay->deleteReceipts(['pr_id' => $id]);

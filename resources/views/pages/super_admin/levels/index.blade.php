@@ -2,26 +2,55 @@
 @section('page_title', 'Manage Levels')
 @section('content')
 
-@push('styles')
 <style>
+/* Manage Levels – scoped overrides (inline so they always load) */
 .levels-card .card-header { border-bottom: 1px solid #e5e7eb; }
-/* Add Level: clean outline, solid red on hover */
 .levels-card .btn-add-level { background: #fff; border: 1px solid #D32F2F; color: #D32F2F; padding: 0.375rem 0.75rem; font-size: 0.875rem; border-radius: 6px; }
 .levels-card .btn-add-level:hover { background: #D32F2F; border-color: #D32F2F; color: #fff; }
-/* Table: borderless with thin row border */
-.levels-card .levels-table { border: none !important; }
-.levels-card .levels-table thead th { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7280; font-weight: 500; border: none !important; border-bottom: 1px solid #e5e7eb !important; padding: 0.625rem 0 1rem 0; vertical-align: middle; }
-.levels-card .levels-table thead th:first-child { padding-left: 0; }
-.levels-card .levels-table tbody td { border: none !important; border-bottom: 1px solid #e5e7eb !important; padding: 0 0; vertical-align: middle; font-size: 0.9375rem; color: #111827; min-height: 48px; }
-.levels-card .levels-table tbody td:first-child { padding: 0.875rem 1.5rem 0.875rem 0; }
-.levels-card .levels-table tbody td:last-child { padding-left: 0.5rem; padding-right: 0; }
+
+.levels-card .levels-table { border: none !important; border-collapse: collapse !important; }
+.levels-card .levels-table thead th {
+    background-color: #002147 !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-bottom: 1px solid #002147 !important;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    vertical-align: middle;
+    padding: 10px 20px;
+    line-height: 1.3;
+}
+.levels-card .levels-table thead th:nth-child(1) { text-align: center !important; padding-left: 8px; padding-right: 8px; width: 40px; min-width: 40px; }
+.levels-card .levels-table thead th:nth-child(2) { text-align: left !important; padding-left: 20px; }
+.levels-card .levels-table thead th:nth-child(3) { text-align: right !important; padding-right: 20px; }
+
+.levels-card .levels-table tbody tr { line-height: 1.35; }
+.levels-card .levels-table tbody td {
+    border: none !important;
+    border-bottom: 1px solid #d1d5db !important;
+    vertical-align: middle;
+    font-size: 0.9375rem;
+    color: #111827;
+    padding: 10px 20px !important;
+    line-height: 1.35 !important;
+}
+.levels-card .levels-table tbody td:nth-child(1) { text-align: center !important; padding: 10px 8px !important; width: 40px; min-width: 40px; }
+.levels-card .levels-table tbody td:nth-child(2) { text-align: left !important; padding-left: 20px !important; }
+.levels-card .levels-table tbody td:nth-child(3) { text-align: right !important; padding-right: 20px !important; padding-left: 20px !important; }
 .levels-card .levels-table tbody tr:last-child td { border-bottom: none !important; }
-/* Consistent row height */
-.levels-card .levels-table tbody tr { height: 52px; }
-.levels-card .levels-table tbody tr td { height: 52px; box-sizing: border-box; }
-.levels-card .levels-table .d-flex form { margin: 0; display: inline; }
+
+/* Hamburger action button – minimalist, no boxy borders */
+.levels-card .levels-table .levels-action-trigger {
+    background: none !important;
+    border: none !important;
+    color: #8b6914;
+    padding: 4px 8px;
+}
+.levels-card .levels-table .levels-action-trigger:hover { color: #6b5010; background: transparent !important; }
+.levels-card .levels-table .dropdown-menu { min-width: 120px; padding: 0.25rem 0; }
+.levels-card .levels-table .dropdown-item { padding: 0.4rem 1rem; font-size: 0.875rem; }
+.levels-card .levels-table .dropdown-item.text-danger:hover { background-color: rgba(211, 47, 47, 0.08); }
 </style>
-@endpush
 
     <div class="card border-0 shadow-sm levels-card">
         <div class="card-header header-elements-inline bg-white py-4 px-4">
@@ -49,25 +78,34 @@
                 <table class="table table-borderless levels-table mb-0">
                     <thead>
                         <tr>
+                            <th>S/N</th>
                             <th>Name</th>
-                            <th class="text-right" style="width: 100px;">Actions</th>
+                            <th class="text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($levels as $level)
                             <tr>
+                                <td class="align-middle text-center">{{ $loop->iteration }}</td>
                                 <td class="align-middle">{{ $level->name }}</td>
-                                <td class="text-right align-middle" style="padding-right: 25px;">
-                                    <div class="d-flex justify-content-end align-items-center">
-                                        <a href="#" class="action-link edit-link" title="Edit" data-toggle="modal" data-target="#editModal{{ $level->id }}">Edit</a>
-                                        <span class="separator">|</span>
-                                        <a href="{{ request()->root() . '/super_admin/levels/' . $level->id . '/delete' }}" class="action-link delete-link" title="Delete" onclick="return confirm('Are you sure?');">Delete</a>
+                                <td class="text-right align-middle">
+                                    <div class="list-icons">
+                                        <div class="dropdown">
+                                            <a href="#" class="list-icons-item levels-action-trigger" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <i class="icon-menu9"></i>
+                                            </a>
+                                            <div class="dropdown-menu dropdown-menu-right">
+                                                <a href="#" class="dropdown-item" title="Edit" data-toggle="modal" data-target="#editModal{{ $level->id }}"><i class="icon-pencil mr-2"></i> Edit</a>
+                                                <a href="#" id="{{ $level->id }}" onclick="confirmDelete(this.id); return false;" class="dropdown-item text-danger" title="Delete"><i class="icon-trash mr-2"></i> Delete</a>
+                                                <form method="get" id="item-delete-{{ $level->id }}" action="{{ request()->root() . '/super_admin/levels/' . $level->id . '/delete' }}" class="hidden"></form>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="2" class="text-muted text-center py-5" style="border-bottom: none !important;">No levels yet. Click Add Level to create one.</td>
+                                <td colspan="3" class="text-muted text-center py-5" style="border-bottom: none !important;">No levels yet. Click Add Level to create one.</td>
                             </tr>
                         @endforelse
                     </tbody>

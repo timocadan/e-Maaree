@@ -17,10 +17,10 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="exam_id" class="col-form-label font-weight-bold">Exam:</label>
-                                        <select required id="exam_id" name="exam_id" data-placeholder="Select Exam" class="form-control select">
-                                            @foreach($exams as $ex)
-                                                <option {{ $selected && $exam_id == $ex->id ? 'selected' : '' }} value="{{ $ex->id }}">{{ $ex->name }}</option>
+                                        <label for="term" class="col-form-label font-weight-bold">Term:</label>
+                                        <select required id="term" name="term" class="form-control select">
+                                            @foreach($terms ?? [1 => 'Term 1', 2 => 'Term 2'] as $val => $label)
+                                                <option {{ ($selected && isset($term) && $term == $val) ? 'selected' : '' }} value="{{ $val }}">{{ $label }}</option>
                                             @endforeach
                                         </select>
                                     </div>

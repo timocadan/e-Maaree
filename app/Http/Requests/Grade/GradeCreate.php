@@ -23,6 +23,7 @@ class GradeCreate extends FormRequest
             'name' => 'required|string',
             'mark_from' => 'required|numeric',
             'mark_to' => 'required|numeric',
+            'remark' => 'nullable|string|max:40',
         ];
     }
 
@@ -31,6 +32,7 @@ class GradeCreate extends FormRequest
         return  [
             'mark_from' => 'Mark From',
             'mark_to' => 'Mark To',
+            'remark' => 'Remark',
         ];
     }
 }

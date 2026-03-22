@@ -43,6 +43,10 @@ class PinController extends Controller
 
     public function enter_pin($student_id)
     {
+        $student_id = Qs::decodeHash($student_id);
+        if ($student_id === null) {
+            abort(404);
+        }
         if(Qs::userIsTeamSA()) {
             return redirect(route('dashboard'));
         }
@@ -58,6 +62,10 @@ class PinController extends Controller
 
     public function verify(PinVerify $req, $student_id)
     {
+        $student_id = Qs::decodeHash($student_id);
+        if ($student_id === null) {
+            abort(404);
+        }
         $user = Auth::user();
         $code = $this->pin->findValidCode($req->pin_code);
         if($code->count() < 1){

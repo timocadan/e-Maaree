@@ -144,4 +144,20 @@ class MyClassRepo
         return Subject::orderBy('name', 'asc')->with(['my_class', 'teacher'])->get();
     }
 
+    /**
+     * Paginated subjects list, optionally filtered by class.
+     *
+     * @param  int  $perPage
+     * @param  int|null  $classId
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
+    public function getSubjectsPaginated($perPage = 15, $classId = null)
+    {
+        $query = Subject::orderBy('name', 'asc')->with(['my_class', 'teacher']);
+        if ($classId !== null) {
+            $query->where('my_class_id', $classId);
+        }
+        return $query->paginate($perPage)->withQueryString();
+    }
+
 }

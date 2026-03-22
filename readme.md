@@ -1,99 +1,129 @@
 # e-maaree
 
-**Multi-tenant School Management System** for K–12 schools and colleges. Each school runs on its own subdomain with full data isolation.
+**Multi-tenant school management system** for K–12 and colleges. One codebase; each school runs on its own subdomain with isolated data.
 
-**Developed by [ABQO Technology](https://web.facebook.com/timocadaan)**  
-**Lead Developer:** Cumar Timocade
+- **Vendor:** [ABQO Technology](https://web.facebook.com/timocadaan)  
+- **License:** MIT  
+- **Laravel:** 8.x · **PHP:** 7.2 | 8.0 · **Tenancy:** [stancl/tenancy](https://tenancyforlaravel.com/) 3.x  
 
 ---
 
-## Overview
+## Table of contents
 
-e-maaree is built on **Laravel 8** and **[stancl/tenancy](https://tenancyforlaravel.com/)**. It provides:
+- [Tech stack](#tech-stack)
+- [Architecture](#architecture)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Running the application](#running-the-application)
+- [Project structure](#project-structure)
+- [Conventions for developers](#conventions-for-developers)
+- [Default credentials](#default-credentials)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Security & license](#security--license)
 
-- **Central (landlord) app** – landing, **SaaS Control Center** (Landlord Dashboard), and tenant provisioning
-- **Tenant app** – full school management per subdomain (e.g. `school1.yourdomain.com`)
-- **Roles:** Super Admin, Admin, Teacher, Accountant, Librarian, Student, Parent
-- **Features:** Students, Classes, Sections, Subjects, Exams, Grades, Marks, Timetables, Payments, Pins, Dorms, **Levels (Class Types)**, and more
+---
 
-### Recent updates (e-maaree)
+## Tech stack
 
-- **Super Admin – Manage Levels (Class Types)** – Define educational levels (e.g. Primary, Secondary). Used for classes, fees, and reports. Routes: `POST /super_admin/levels/{id}/update`, `GET /super_admin/levels/{id}/delete`.
-- **Simplified Admit Student form** – Two-step wizard: **Step 1** – Personal data (name, address, gender, phone, DOB, **parent name**, **parent phone**). **Step 2** – Student data (class, section, year admitted, admission number). Dormitory, nationality/state/LGA, blood group, and passport photo are hidden for a lean MVP.
-- **Smart Admission** – Parent is resolved by **parent phone**: if a user with `user_type = parent` and the given phone exists, the student is linked to that parent; otherwise a new parent user is created (name, phone, default password `123456`). No need to pick from a long parent list.
+| Layer | Technology |
+|-------|------------|
+| Backend | Laravel 8.x, PHP 7.2\|8.0 |
+| Tenancy | stancl/tenancy 3.6 |
+| Database | MySQL / MariaDB |
+| PDF | barryvdh/laravel-dompdf |
+| IDs in URLs | hashids/hashids |
+| Frontend | Laravel UI, Bootstrap, jQuery, DataTables (with Buttons extension) |
 
-### Landlord Dashboard (SaaS Control Center)
+---
 
-- **School list** – view all tenants (schools) with ID, name, domain(s), status, and created date
-- **Search** – filter schools by name, ID, or domain (instant search)
-- **Suspend / Activate** – toggle school status (active ↔ suspended); suspended schools cannot access their dashboard and see a contact message (ABQO Technology)
-- **Manage** – edit school name and domain, reset super admin password
-- **Delete** – remove a school and its database (with confirmation)
-- **Add New School** – create a tenant with ID, name, and domain
+## Architecture
+
+- **Central (landlord) app**  
+  Served from `APP_URL` (e.g. `http://localhost:8001`). Handles landing, login, and the **Landlord Dashboard** (create/suspend/activate/edit/delete tenant schools). Routes live in `routes/web.php`.
+
+- **Tenant (school) app**  
+  One tenant per subdomain (e.g. `school1.localhost:8001`). Full school management: students, classes, sections, subjects, exams, grades, marks, timetables, payments, pins, dorms, levels (class types), etc. Routes live in `routes/tenant.php` and are loaded only for tenant domains (middleware: `InitializeTenancyByDomain`, `PreventAccessFromCentralDomains`, `tenant.active`).
+
+- **Roles (tenant)**  
+  Super Admin, Admin, Teacher, Accountant, Librarian, Student, Parent. Access is enforced in controllers and via the `Qs` helper (e.g. `Qs::userIsTeamSA()`).
 
 ---
 
 ## Requirements
 
-- PHP ^7.2 | ^8.0
+- PHP ^7.2 or ^8.0
 - Composer
-- Node.js & NPM (for front-end assets)
-- MySQL / MariaDB
-- Laravel 8.x requirements: [Laravel 8 Docs](https://laravel.com/docs/8.x)
+- Node.js & NPM (for front-end assets if you build them)
+- MySQL or MariaDB
+- [Laravel 8 requirements](https://laravel.com/docs/8.x#server-requirements) (BCmath, Ctype, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML)
 
 ---
 
 ## Installation
 
-1. **Clone or download** the repository.
-2. **Install PHP dependencies:**
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url> e-maaree && cd e-maaree
+   ```
+
+2. **Install PHP dependencies**
    ```bash
    composer install
    ```
-3. **Copy environment file and configure:**
+
+3. **Environment**
    ```bash
    cp .env.example .env
    php artisan key:generate
    ```
-   Edit `.env`: set `APP_NAME=e-maaree`, `APP_URL`, and database credentials (`DB_DATABASE=emaaree_db`, etc.).
-4. **Create the database** (e.g. `emaaree_db`) and run migrations:
+   Edit `.env`: set `APP_NAME`, `APP_URL`, and database credentials (see [Configuration](#configuration)).
+
+4. **Database**
+   - Create the database (e.g. `emaaree_db`).
+   - Run central migrations:
    ```bash
    php artisan migrate
    ```
-5. **Seed central and (optionally) tenant data:**
+
+5. **Seed central (and optional tenant) data**
    ```bash
    php artisan db:seed
    ```
-6. **Create a tenant (school)** and run tenant migrations/seed:
+
+6. **Create a tenant school**
    ```bash
    php artisan tenancy:create "My School" school1.localhost --id=school1
    ```
-7. **NPM (optional, for assets):**
+   This creates the tenant DB and runs tenant migrations. Optionally seed tenants as per your seeders.
+
+7. **Front-end assets (optional)**
    ```bash
    npm install && npm run dev
    ```
+   If you do not build assets, the project may still rely on pre-built assets under `public/`.
 
 ---
 
-## Default login (after seeding)
+## Configuration
 
-| Account   | Username    | Email                     | Password  |
-|----------|-------------|---------------------------|-----------|
-| Super Admin | superadmin | superadmin@emaaree.test   | password  |
-| Admin    | admin       | admin@admin.com           | password  |
-| Teacher  | teacher     | teacher@teacher.com       | password  |
-| Parent   | parent      | parent@parent.com         | password  |
-| Accountant | accountant | accountant@accountant.com | password  |
-| Student  | student     | student@student.com       | password  |
+| Variable | Purpose |
+|----------|--------|
+| `APP_NAME` | Application name (e.g. `e-maaree`). |
+| `APP_URL` | Base URL for the **central** app (e.g. `http://localhost:8001`). |
+| `APP_DEBUG` | Set to `false` in production. |
+| `DB_DATABASE` | Central (landlord) database name. |
+| `DB_USERNAME`, `DB_PASSWORD` | MySQL credentials for central DB. |
 
-*(Change default passwords in production.)*
+Tenant databases are created by stancl/tenancy (separate DB per tenant). For local tenant access, ensure the tenant subdomain resolves (e.g. in `hosts`: `127.0.0.1 school1.localhost`). Do not set `SESSION_DOMAIN` for local development with port-based URLs to avoid 419 errors.
 
 ---
 
-## Running the app
+## Running the application
 
-- **Central (landlord):** Visit `APP_URL` (e.g. `http://localhost:8001`).
-- **Tenant (school):** Use the tenant subdomain (e.g. `http://school1.localhost:8001`). Ensure the host resolves (e.g. `127.0.0.1 school1.localhost` in `hosts`).
+- **Central (landlord):** open `APP_URL` (e.g. `http://localhost:8001`).
+- **Tenant (school):** open the tenant subdomain (e.g. `http://school1.localhost:8001`).
 
 ```bash
 php artisan serve --port=8001
@@ -101,28 +131,83 @@ php artisan serve --port=8001
 
 ---
 
-## Project structure (branding)
+## Project structure
 
-- **Product name:** e-maaree  
-- **Company:** ABQO Technology  
-- **Lead developer:** Cumar Timocade – [Facebook](https://web.facebook.com/timocadaan)  
-- **License:** MIT © 2026 ABQO Technology  
-
----
-
-## Security
-
-If you discover a security vulnerability, please report it to **ABQO Technology** responsibly. Do not open public issues for security-sensitive matters.
-
----
-
-## Contributing
-
-Contributions and suggestions are welcome via Pull Requests.
+| Path | Description |
+|------|-------------|
+| `app/Http/Controllers/Central/` | Landlord-only controllers (e.g. `LandlordController`). |
+| `app/Http/Controllers/` | Tenant-facing controllers (e.g. `SupportTeam`, `SuperAdmin`). |
+| `app/Helpers/Qs.php` | Global helper: hashing, settings, role checks, redirects (see [Conventions](#conventions-for-developers)). |
+| `routes/web.php` | Central routes (landlord dashboard, auth). |
+| `routes/tenant.php` | Tenant routes (school management). |
+| `resources/views/` | Blade templates; `layouts/master.blade.php`, `partials/`, tenant views under `pages/` (e.g. `support_team/`, `parent/`). |
+| `config/` | Laravel and tenancy config. Tenant DB connection is handled by stancl/tenancy. |
 
 ---
 
-## License
+## Conventions for developers
 
-This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.  
-Copyright (c) 2026 ABQO Technology.
+- **IDs in URLs**  
+  Use `Qs::hash($id)` when generating URLs and `Qs::decodeHash($str)` when resolving IDs from routes. This keeps internal IDs non-sequential in the UI.
+
+- **Settings / system name**  
+  `Qs::getSetting('key')` and `Qs::getSystemName()` read from the tenant’s settings (used in PDF/Excel titles, etc.).
+
+- **Role checks**  
+  Use `Qs::userIsSuperAdmin()`, `Qs::userIsTeamSA()`, `Qs::userIsTeacher()`, `Qs::userIsParent()`, etc., for access control and UI visibility.
+
+- **Blade**  
+  Main layout: `layouts/master.blade.php`. Content: `@yield('content')`. Scripts: `@yield('scripts')`. Global scripts (DataTables, etc.) are loaded from `partials/inc_bottom.blade.php`.
+
+- **DataTables**  
+  Export buttons (Excel, PDF) are wired in views (e.g. student list) via DataTables Buttons (HTML5). Tables using only search/sort use class `datatable-basic` and are initialized in the same view’s `@section('scripts')` with a dom string that omits the button column (no `B`).
+
+- **Tenancy**  
+  Do not mix central and tenant logic. Central routes and controllers stay in `web.php` and `Central/`; all school-specific logic stays in `tenant.php` and the rest of `app/`.
+
+---
+
+## Default credentials
+
+After `php artisan db:seed`:
+
+| Role | Username | Email | Password |
+|------|----------|--------|----------|
+| Super Admin | superadmin | superadmin@emaaree.test | password |
+| Admin | admin | admin@admin.com | password |
+| Teacher | teacher | teacher@teacher.com | password |
+| Parent | parent | parent@parent.com | password |
+| Accountant | accountant | accountant@accountant.com | password |
+| Student | student | student@student.com | password |
+
+**Change all default passwords before any production or shared environment.**
+
+---
+
+## Testing
+
+```bash
+composer test
+# or
+./vendor/bin/phpunit
+```
+
+(Adjust if your project uses a different test command or suite.)
+
+---
+
+## Deployment
+
+- Set `APP_ENV=production`, `APP_DEBUG=false`, and a strong `APP_KEY`.
+- Configure production DB and run `php artisan migrate --force` for central (tenant migrations run when tenants are created or via your deployment process).
+- Run `php artisan config:cache`, `php artisan route:cache`, `php artisan view:cache` as appropriate.
+- Ensure `storage` and `bootstrap/cache` are writable; run `php artisan storage:link` if needed.
+- Point the web server to the `public` directory. Ensure the central domain and all tenant subdomains resolve to this application.
+
+---
+
+## Security & license
+
+- **Security:** Report vulnerabilities to ABQO Technology in private. Do not open public issues for security-sensitive matters.
+- **Contributing:** Contributions are welcome via pull requests.
+- **License:** MIT. See [LICENSE](LICENSE). Copyright (c) 2026 ABQO Technology.

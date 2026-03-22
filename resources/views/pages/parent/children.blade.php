@@ -18,7 +18,7 @@
                     <th>ADM_No</th>
                     <th>Section</th>
                     <th>Email</th>
-                    <th>Action</th>
+                    <th class="no-export">Action</th>
                 </tr>
                 </thead>
                 <tbody>

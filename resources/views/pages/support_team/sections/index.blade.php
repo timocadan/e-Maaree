@@ -9,6 +9,37 @@
         </div>
 
         <div class="card-body">
+            <style>
+                /* Sections table: navy header + left alignment (S/N, Name, Class, Teacher), Action right */
+                .datatable-basic thead th { background-color: #002147; color: #fff; font-weight: 600; border-color: #002147; }
+                .datatable-basic thead th:first-child,
+                .datatable-basic tbody td:first-child,
+                .dataTables_wrapper table.datatable-basic thead th:first-child,
+                .dataTables_wrapper table.datatable-basic tbody td:first-child {
+                    text-align: left !important;
+                    padding-left: 15px !important;
+                }
+                .datatable-basic thead th:nth-child(2),
+                .datatable-basic thead th:nth-child(3),
+                .datatable-basic thead th:nth-child(4),
+                .datatable-basic tbody td:nth-child(2),
+                .datatable-basic tbody td:nth-child(3),
+                .datatable-basic tbody td:nth-child(4),
+                .dataTables_wrapper table.datatable-basic thead th:nth-child(2),
+                .dataTables_wrapper table.datatable-basic thead th:nth-child(3),
+                .dataTables_wrapper table.datatable-basic thead th:nth-child(4),
+                .dataTables_wrapper table.datatable-basic tbody td:nth-child(2),
+                .dataTables_wrapper table.datatable-basic tbody td:nth-child(3),
+                .dataTables_wrapper table.datatable-basic tbody td:nth-child(4) {
+                    text-align: left !important;
+                }
+                .datatable-basic thead th:nth-child(5),
+                .datatable-basic tbody td:nth-child(5),
+                .dataTables_wrapper table.datatable-basic thead th:nth-child(5),
+                .dataTables_wrapper table.datatable-basic tbody td:nth-child(5) {
+                    text-align: right !important;
+                }
+            </style>
             <ul class="nav nav-tabs nav-tabs-highlight">
                 <li class="nav-item"><a href="#new-section" class="nav-link active" data-toggle="tab">Create New Section</a></li>
                 <li class="nav-item dropdown">
@@ -66,7 +97,7 @@
                 </div>
 
                 @foreach($my_classes as $d)
-                    <div class="tab-pane fade" id="c{{ $d->id }}">                         <table class="table datatable-button-html5-columns">
+                    <div class="tab-pane fade" id="c{{ $d->id }}">                         <table class="table datatable-basic">
                             <thead>
                             <tr>
                                 <th>S/N</th>
@@ -89,7 +120,7 @@
                                         <td> - </td>
                                     @endif
 
-                                    <td class="text-center">
+                                    <td class="text-right">
                                         <div class="list-icons">
                                             <div class="dropdown">
                                                 <a href="#" class="list-icons-item" data-toggle="dropdown">
@@ -124,4 +155,34 @@
 
     {{--Section List Ends--}}
 
+@endsection
+
+@section('scripts')
+<script>
+(function() {
+    if (!$().DataTable) return;
+    $('.datatable-basic').DataTable({
+        autoWidth: false,
+        dom: '<"datatable-header"fl><"datatable-scroll"t><"datatable-footer"ip>',
+        language: {
+            search: '<span>Filter:</span> _INPUT_',
+            searchPlaceholder: 'Type to filter...',
+            lengthMenu: '<span>Show:</span> _MENU_',
+            paginate: { 'first': 'First', 'last': 'Last', 'next': '&rarr;', 'previous': '&larr;' }
+        },
+        initComplete: function() {
+            var $t = $('.dataTables_wrapper table.datatable-basic');
+            $t.find('thead th:first-child, tbody td:first-child').css({ 'text-align': 'left', 'padding-left': '15px' });
+            $t.find('thead th:nth-child(2), thead th:nth-child(3), thead th:nth-child(4), tbody td:nth-child(2), tbody td:nth-child(3), tbody td:nth-child(4)').css('text-align', 'left');
+            $t.find('thead th:nth-child(5), tbody td:nth-child(5)').css('text-align', 'right');
+        },
+        drawCallback: function() {
+            var $t = $('.dataTables_wrapper table.datatable-basic');
+            $t.find('thead th:first-child, tbody td:first-child').css({ 'text-align': 'left', 'padding-left': '15px' });
+            $t.find('thead th:nth-child(2), thead th:nth-child(3), thead th:nth-child(4), tbody td:nth-child(2), tbody td:nth-child(3), tbody td:nth-child(4)').css('text-align', 'left');
+            $t.find('thead th:nth-child(5), tbody td:nth-child(5)').css('text-align', 'right');
+        }
+    });
+})();
+</script>
 @endsection

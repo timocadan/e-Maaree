@@ -1,7 +1,9 @@
 @extends('layouts.master')
 @section('page_title', 'Manage Payments')
 @section('content')
-
+<style>
+    .table-payment-types thead th { background-color: #002147; color: #fff; font-weight: 600; padding: 10px 12px; border: 1px solid #002147; }
+</style>
     <div class="card">
         <div class="card-header header-elements-inline">
             <h5 class="card-title"><i class="icon-cash2 mr-2"></i> Select year</h5>
@@ -61,16 +63,16 @@
 
             <div class="tab-content">
                     <div class="tab-pane fade show active" id="all-payments">
-                        <table class="table datatable-button-html5-columns">
+                        <table class="table table-payment-types datatable-payment-no-export">
                             <thead>
                             <tr>
                                 <th>#</th>
                                 <th>Title</th>
-                                <th>Amount</th>
-                                <th>Ref_No</th>
+                                <th>Amount ({{ Qs::getCurrency() }})</th>
+                                {{-- <th>Ref_No</th> --}}
                                 <th>Class</th>
                                 <th>Method</th>
-                                <th>Info</th>
+                                {{-- <th>Info</th> --}}
                                 <th>Action</th>
                             </tr>
                             </thead>
@@ -80,10 +82,10 @@
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $p->title }}</td>
                                     <td>{{ $p->amount }}</td>
-                                    <td>{{ $p->ref_no }}</td>
+                                    {{-- <td>{{ $p->ref_no }}</td> --}}
                                     <td>{{ $p->my_class_id ? $p->my_class->name : '' }}</td>
                                     <td>{{ ucwords($p->method) }}</td>
-                                    <td>{{ $p->description }}</td>
+                                    {{-- <td>{{ $p->description }}</td> --}}
                                     <td class="text-center">
                                         <div class="list-icons">
                                             <div class="dropdown">
@@ -110,16 +112,16 @@
 
                 @foreach($my_classes as $mc)
                     <div class="tab-pane fade" id="pc-{{ $mc->id }}">
-                        <table class="table datatable-button-html5-columns">
+                        <table class="table table-payment-types datatable-payment-no-export">
                             <thead>
                             <tr>
                                 <th>#</th>
                                 <th>Title</th>
-                                <th>Amount</th>
-                                <th>Ref_No</th>
+                                <th>Amount ({{ Qs::getCurrency() }})</th>
+                                {{-- <th>Ref_No</th> --}}
                                 <th>Class</th>
                                 <th>Method</th>
-                                <th>Info</th>
+                                {{-- <th>Info</th> --}}
                                 <th>Action</th>
                             </tr>
                             </thead>
@@ -129,10 +131,10 @@
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $p->title }}</td>
                                     <td>{{ $p->amount }}</td>
-                                    <td>{{ $p->ref_no }}</td>
+                                    {{-- <td>{{ $p->ref_no }}</td> --}}
                                     <td>{{ $p->my_class_id ? $p->my_class->name : '' }}</td>
                                     <td>{{ ucwords($p->method) }}</td>
-                                    <td>{{ $p->description }}</td>
+                                    {{-- <td>{{ $p->description }}</td> --}}
                                     <td class="text-center">
                                         <div class="list-icons">
                                             <div class="dropdown">

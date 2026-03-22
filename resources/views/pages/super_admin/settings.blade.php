@@ -39,7 +39,19 @@
                         <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">Phone</label>
                             <div class="col-lg-9">
-                                <input name="phone" value="{{ $s['phone'] }}" type="text" class="form-control" placeholder="Phone">
+                                <input name="phone" value="{{ $s['phone'] }}" type="text" class="form-control" placeholder="Primary phone number">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label font-weight-semibold">Secondary Phone</label>
+                            <div class="col-lg-9">
+                                <input name="phone2" value="{{ $s['phone2'] ?? '' }}" type="text" class="form-control" placeholder="Secondary phone number">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label font-weight-semibold">School Website</label>
+                            <div class="col-lg-9">
+                                <input name="website" value="{{ $s['website'] ?? '' }}" type="text" class="form-control" placeholder="https://example-school.com">
                             </div>
                         </div>
                         <div class="form-group row">
@@ -105,7 +117,23 @@
                         <label class="col-lg-3 col-form-label font-weight-semibold">Change Logo:</label>
                         <div class="col-lg-9">
                             <div class="mb-3">
-                                <img style="width: 100px" height="100px" src="{{ $s['logo'] }}" alt="">
+                                @php
+                                    $logoPath = $s['logo'] ?? '';
+                                    if (!empty($logoPath)) {
+                                        if (strpos($logoPath, 'http') === 0) {
+                                            $logoUrl = $logoPath;
+                                        } else {
+                                            $logoUrl = rtrim(config('app.url'), '/') . '/storage/' . ltrim($logoPath, '/');
+                                        }
+                                    } else {
+                                        $logoUrl = '';
+                                    }
+                                @endphp
+                                @if(!empty($logoUrl))
+                                    <img style="width: 100px; height: 100px; object-fit: contain;" src="{{ $logoUrl }}" alt="School logo">
+                                @else
+                                    <div style="width: 100px; height: 100px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px;">No logo</div>
+                                @endif
                             </div>
                             <input name="logo" accept="image/*" type="file" class="file-input" data-show-caption="false" data-show-upload="false" data-fouc>
                         </div>
@@ -118,6 +146,26 @@
                 <div class="text-right">
                     <button type="submit" class="btn btn-danger">Submit form <i class="icon-paperplane ml-2"></i></button>
                 </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header header-elements-inline" style="background-color: #1A1A1A;">
+            <h6 class="card-title font-weight-semibold text-white">Term assessment control</h6>
+        </div>
+        <div class="card-body">
+            <p class="text-muted small mb-2">Switch which assessment (month/slot) is open for editing school-wide. All other slots become readonly in Marks Entry.</p>
+            <form method="post" action="{{ route('settings.active_slot') }}" class="form-inline">
+                @csrf
+                @method('put')
+                <label class="mr-2 font-weight-semibold">Open for editing:</label>
+                <select name="active_slot" class="form-control form-control-sm mr-2" style="min-width: 140px;">
+                    @for($i = 0; $i <= 5; $i++)
+                        <option value="{{ $i }}" {{ ($current_active_slot ?? 0) == $i ? 'selected' : '' }}>{{ $i === 0 ? 'Slot 1 (Month 1)' : ($i === 1 ? 'Slot 2 (Month 2)' : ($i === 2 ? 'Slot 3 (Month 3)' : ($i === 3 ? 'Slot 4 (Month 4)' : ($i === 4 ? 'Exam' : 'Slot ' . ($i + 1)))) }}</option>
+                    @endfor
+                </select>
+                <button type="submit" class="btn btn-sm" style="background-color: #D32F2F; color: #fff; border-color: #D32F2F;">Set active slot</button>
             </form>
         </div>
     </div>

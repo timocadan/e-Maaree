@@ -64,6 +64,30 @@
             #ajax-reg .personal-data-row-2 .select2-container .select2-selection__rendered {
                 line-height: 2.2rem !important;
             }
+            /* Parent Smart Search: suggestion box and items (professional dark text, clean float) */
+            #parent-suggestions {
+                top: 100%;
+                left: 0;
+                margin-top: 4px;
+                background: #fff;
+                border: 1px solid #dee2e6;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                padding: 4px 0;
+            }
+            #parent-suggestions .parent-suggestion {
+                color: #212529 !important;
+                padding: 0.5rem 0.75rem;
+                border: none;
+                border-radius: 4px;
+                margin: 0 4px;
+                font-size: 0.9rem;
+                line-height: 1.4;
+            }
+            #parent-suggestions .parent-suggestion:hover {
+                background-color: #f1f3f5 !important;
+                color: #212529 !important;
+            }
         </style>
         <div class="card">
             <div class="card-header bg-white header-elements-inline">
@@ -117,19 +141,22 @@
                         </div>
                     </div>
 
-                    {{-- Smart Admission: Parent Name & Phone (resolve or create parent in backend) --}}
-                    <div class="row mt-3 personal-data-row-2">
+                    {{-- Smart Admission: Parent Name & Phone (autocomplete + resolve or create in backend) --}}
+                    <div class="row mt-3 personal-data-row-2" id="parent-fields-row">
                         <div class="col-md-6">
-                            <div class="form-group mb-0">
+                            <div class="form-group mb-0 position-relative">
                                 <label class="font-weight-medium">Parent Name <span class="text-danger">*</span></label>
-                                <input value="{{ old('parent_name') }}" required type="text" name="parent_name" placeholder="Parent / Guardian full name" class="form-control">
+                                <input value="{{ old('parent_name') }}" required type="text" id="parent_name" name="parent_name" placeholder="Parent / Guardian full name" class="form-control" autocomplete="off">
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group mb-0">
+                            <div class="form-group mb-0 position-relative">
                                 <label class="font-weight-medium">Parent Phone <span class="text-danger">*</span></label>
-                                <input value="{{ old('parent_phone') }}" required type="text" name="parent_phone" placeholder="Parent phone number" class="form-control">
+                                <input value="{{ old('parent_phone') }}" required type="text" id="parent_phone" name="parent_phone" placeholder="Parent phone number" class="form-control" autocomplete="off">
                             </div>
+                        </div>
+                        <div class="col-12 position-relative" style="min-height: 0;">
+                            <div id="parent-suggestions" class="position-absolute" style="display: none; z-index: 1050; max-height: 220px; overflow-y: auto; min-width: 320px;"></div>
                         </div>
                     </div>
 
@@ -208,7 +235,7 @@
                         <div class="col-md-6">
                             <div class="form-group mb-0">
                                 <label class="font-weight-medium" for="my_class_id">Class <span class="text-danger">*</span></label>
-                                <select onchange="getClassSections(this.value)" data-placeholder="Choose..." required name="my_class_id" id="my_class_id" class="select-search form-control">
+                                <select onchange="getClassSections(this.value);" data-placeholder="Choose..." required name="my_class_id" id="my_class_id" class="select-search form-control">
                                     <option value=""></option>
                                     @foreach($my_classes as $c)
                                         <option {{ (old('my_class_id') == $c->id ? 'selected' : '') }} value="{{ $c->id }}">{{ $c->name }}</option>
@@ -256,7 +283,7 @@
                         <div class="col-md-4">
                             <div class="form-group mb-0">
                                 <label class="font-weight-medium">Admission Number</label>
-                                <input type="text" name="adm_no" placeholder="Student ID (optional)" class="form-control" value="{{ old('adm_no') }}">
+                                <input type="text" name="adm_no" id="adm_no" placeholder="Student ID (optional)" class="form-control" value="{{ old('adm_no') }}">
                             </div>
                         </div>
                     </div>
@@ -297,6 +324,7 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Wizard button labels
     setTimeout(function() {
         var $wizard = $('#ajax-reg');
         if ($wizard.length && $wizard.find('.actions').length) {
@@ -314,6 +342,96 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }, 400);
+
+    // Parent autocomplete (search existing parents, fill name + phone on select)
+    var searchUrl = '{{ route("students.search_parents") }}';
+    var $parentName = $('#parent_name');
+    var $parentPhone = $('#parent_phone');
+    var $suggestions = $('#parent-suggestions');
+    var debounceTimer = null;
+
+    function searchParents(q) {
+        q = (q || '').trim();
+        if (q.length < 2) {
+            $suggestions.hide().empty();
+            return;
+        }
+        $.get(searchUrl, { q: q }, function(data) {
+            if (!data || data.length === 0) {
+                $suggestions.hide().empty();
+                return;
+            }
+            var html = '';
+            data.forEach(function(p) {
+                var name = (p.name || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                var phone = (p.phone || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                html += '<a href="#" class="parent-suggestion d-block text-decoration-none" data-name="' + name + '" data-phone="' + phone + '">' +
+                    name + ' - ' + phone + '</a>';
+            });
+            $suggestions.html(html).show();
+        }).fail(function() {
+            $suggestions.hide().empty();
+        });
+    }
+
+    function onParentInput() {
+        var q = $parentName.val() || $parentPhone.val();
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() { searchParents(q); }, 300);
+    }
+
+    $parentName.add($parentPhone).on('input', onParentInput).on('focus', onParentInput);
+
+    $(document).on('click', '.parent-suggestion', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var name = $(this).data('name');
+        var phone = $(this).data('phone');
+        $parentName.val(name || '');
+        $parentPhone.val(phone || '');
+        $suggestions.hide().empty();
+    });
+
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#parent-fields-row').length) {
+            $suggestions.hide().empty();
+        }
+    });
+
+    // Dynamic Admission Number suggestion: when Class changes, suggest {ACRONYM}/{CLASS_SHORT}/{NEXT_SERIAL}
+    function getNextAdmissionNumber(classId) {
+        console.log('[Admission Number] getNextAdmissionNumber called with classId:', classId);
+        if (!classId) {
+            $('#adm_no').val('');
+            return;
+        }
+        var baseUrl = '{{ route("ajax.get_next_admission_number", ["class_id" => 0]) }}';
+        var url = baseUrl.replace(/\/0\/?$/, '') + '/' + classId;
+        console.log('[Admission Number] AJAX URL:', url);
+        $.get(url)
+            .done(function(data) {
+                console.log('[Admission Number] AJAX response:', data);
+                if (data && data.admission_number) {
+                    $('#adm_no').val(data.admission_number);
+                } else {
+                    $('#adm_no').val('');
+                }
+            })
+            .fail(function(xhr, status, err) {
+                console.log('[Admission Number] AJAX fail:', status, err, xhr.responseText);
+                $('#adm_no').val('');
+            });
+    }
+
+    $('#my_class_id').on('change', function() {
+        getNextAdmissionNumber($(this).val());
+    });
+
+    // If Class is already selected (e.g. after validation), suggest admission number
+    var initialClass = $('#my_class_id').val();
+    if (initialClass) {
+        getNextAdmissionNumber(initialClass);
+    }
 });
 </script>
 @endsection

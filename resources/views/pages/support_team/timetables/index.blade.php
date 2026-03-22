@@ -80,7 +80,7 @@
                                 <th>Class</th>
                                 <th>Type</th>
                                 <th>Year</th>
-                                <th>Action</th>
+                                <th class="no-export">Action</th>
                             </tr>
                             </thead>
                             <tbody>

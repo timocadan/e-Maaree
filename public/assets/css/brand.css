@@ -138,3 +138,54 @@ label.error {
 #ajax-reg .form-group.mb-0 {
   margin-bottom: 25px !important;
 }
+
+/* ===== Global table styling – Navy header, consistent list tables ===== */
+.card table thead th,
+.table thead th {
+  background-color: #002147 !important;
+  color: #FFFFFF !important;
+  border-color: #002147;
+  font-weight: 600;
+  padding: 10px 12px;
+  text-align: center;
+}
+.card table thead th.col-name,
+.card table tbody td.col-name,
+.table thead th.col-name,
+.table tbody td.col-name,
+.card table thead th:nth-child(2),
+.card table tbody td:nth-child(2),
+.table thead th:nth-child(2),
+.table tbody td:nth-child(2) {
+  text-align: left !important;
+}
+.card table thead th:first-child,
+.card table tbody td:first-child,
+.table thead th:first-child,
+.table tbody td:first-child {
+  min-width: 40px;
+  text-align: center !important;
+}
+.card table thead th:last-child,
+.card table tbody td:last-child,
+.table thead th:last-child,
+.table tbody td:last-child {
+  min-width: 70px;
+}
+.card table tbody td,
+.table tbody td {
+  vertical-align: middle;
+}
+/* Minimalist action dropdown – no boxy borders */
+.card table .list-icons-item,
+.table .list-icons-item {
+  background: none !important;
+  border: none !important;
+  color: #8b6914;
+  padding: 4px 8px;
+}
+.card table .list-icons-item:hover,
+.table .list-icons-item:hover {
+  color: #6b5010;
+  background: transparent !important;
+}

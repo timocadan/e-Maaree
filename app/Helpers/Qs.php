@@ -80,8 +80,8 @@ class Qs
 
     public static function hash($id)
     {
-        $date = date('dMY').'CJ';
-        $hash = new Hashids($date, 14);
+        $salt = config('app.key');
+        $hash = new Hashids($salt, 8);
         return $hash->encode($id);
     }
 
@@ -107,12 +107,24 @@ class Qs
 
     }
 
-    public static function decodeHash($str, $toString = true)
+    /**
+     * Decode a hashed ID. Returns null if invalid; otherwise the decoded integer.
+     *
+     * @param  string|null  $str
+     * @return int|null
+     */
+    public static function decodeHash($str)
     {
-        $date = date('dMY').'CJ';
-        $hash = new Hashids($date, 14);
+        if ($str === null || $str === '') {
+            return null;
+        }
+        $salt = config('app.key');
+        $hash = new Hashids($salt, 8);
         $decoded = $hash->decode($str);
-        return $toString ? implode(',', $decoded) : $decoded;
+        if (empty($decoded) || !is_array($decoded)) {
+            return null;
+        }
+        return (int) $decoded[0];
     }
 
     public static function userIsTeamAccount()
@@ -283,6 +295,22 @@ class Qs
         return $defaults[$type] ?? '';
     }
 
+    /**
+     * Currency code/symbol for display (Ethiopian market: ETB).
+     */
+    public static function getCurrency()
+    {
+        return 'ETB';
+    }
+
+    /**
+     * Payment methods for Ethiopian market (Jigjiga).
+     */
+    public static function getPaymentMethods()
+    {
+        return ['ebirr', 'Kaafi', 'CBE', 'telebirr', 'Cash'];
+    }
+
     public static function getCurrentSession()
     {
         return self::getSetting('current_session') ?: (date('Y') . '-' . (date('Y') + 1));
@@ -302,9 +330,15 @@ class Qs
     public static function getSystemName()
     {
         $name = self::getSetting('system_name');
-        if (empty($name) || strcasecmp(trim($name), 'CJ INSPIRED ACADEMY') === 0) {
+        $trim = is_string($name) ? trim($name) : '';
+        if ($trim === '') {
             return 'e-maaree';
         }
+        // Normalise legacy demo / seed names to product default (no third-party branding).
+        if (preg_match('/cj\s*inspired|cjia\b/iu', $trim)) {
+            return 'e-maaree';
+        }
+
         return $name;
     }
 

@@ -30,11 +30,14 @@ class StudentRecordUpdate extends FormRequest
             'bg_id' => 'sometimes|nullable',
             'my_class_id' => 'required',
             'section_id' => 'required',
-            'state_id' => 'required',
-            'lga_id' => 'required',
-            'nal_id' => 'required',
+            'state_id' => 'sometimes|nullable',
+            'lga_id' => 'sometimes|nullable',
+            'nal_id' => 'sometimes|nullable',
+            'parent_name' => 'required|string|min:2|max:150',
+            'parent_phone' => 'required|string|min:6|max:20',
             'my_parent_id' => 'sometimes|nullable',
             'dorm_id' => 'sometimes|nullable',
+            'adm_no' => 'nullable|string|max:255',
         ];
     }
 
@@ -49,6 +52,8 @@ class StudentRecordUpdate extends FormRequest
             'my_parent_id' => 'Parent',
             'my_class_id' => 'Class',
             'section_id' => 'Section',
+            'parent_name' => 'Parent Name',
+            'parent_phone' => 'Parent Phone',
         ];
     }
 
@@ -56,7 +61,9 @@ class StudentRecordUpdate extends FormRequest
     {
         $input = $this->all();
 
-        $input['my_parent_id'] = $input['my_parent_id'] ? Qs::decodeHash($input['my_parent_id']) : NULL;
+        if (!empty($input['my_parent_id'])) {
+            $input['my_parent_id'] = Qs::decodeHash($input['my_parent_id']);
+        }
 
         $this->getInputSource()->replace($input);
 

@@ -1,6 +1,35 @@
 @extends('layouts.master')
 @section('page_title', 'Student Payments')
 @section('content')
+<style>
+    .table-student-payments thead th { background-color: #002147; color: #fff; font-weight: 600; padding: 10px 12px; border: 1px solid #002147; }
+    /* S/N: left + padding (like Manage Grades / Students List) */
+    .table-student-payments thead th:first-child,
+    .table-student-payments tbody td:first-child,
+    .dataTables_wrapper table.table-student-payments thead th:first-child,
+    .dataTables_wrapper table.table-student-payments tbody td:first-child {
+        text-align: left !important;
+        padding-left: 15px !important;
+    }
+    /* Name, ADM_No: left-aligned */
+    .table-student-payments thead th:nth-child(2),
+    .table-student-payments thead th:nth-child(3),
+    .table-student-payments tbody td:nth-child(2),
+    .table-student-payments tbody td:nth-child(3),
+    .dataTables_wrapper table.table-student-payments thead th:nth-child(2),
+    .dataTables_wrapper table.table-student-payments thead th:nth-child(3),
+    .dataTables_wrapper table.table-student-payments tbody td:nth-child(2),
+    .dataTables_wrapper table.table-student-payments tbody td:nth-child(3) {
+        text-align: left !important;
+    }
+    /* Payments (Action): right-aligned */
+    .table-student-payments thead th:nth-child(4),
+    .table-student-payments tbody td:nth-child(4),
+    .dataTables_wrapper table.table-student-payments thead th:nth-child(4),
+    .dataTables_wrapper table.table-student-payments tbody td:nth-child(4) {
+        text-align: right !important;
+    }
+</style>
     <div class="card">
         <div class="card-header header-elements-inline">
             <h5 class="card-title"><i class="icon-cash2 mr-2"></i> Student Payments</h5>
@@ -41,35 +70,38 @@
     @if($selected)
         <div class="card">
             <div class="card-body">
-                <table class="table datatable-button-html5-columns">
+                <table class="table table-student-payments datatable-payment-no-export">
                     <thead>
                     <tr>
-                        <th>S/N</th>
-                        <th>Photo</th>
-                        <th>Name</th>
-                        <th>ADM_No</th>
-                        <th>Payments</th>
+                        <th class="text-left">S/N</th>
+                        {{-- <th>Photo</th> --}}
+                        <th class="text-left">Name</th>
+                        <th class="text-left">ADM_No</th>
+                        <th class="text-right">Payments</th>
                     </tr>
                     </thead>
                     <tbody>
                     @foreach($students as $s)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td><img class="rounded-circle" style="height: 40px; width: 40px;" src="{{ $s->user->photo }}" alt="photo"></td>
+                            {{-- <td><img class="rounded-circle" style="height: 40px; width: 40px;" src="{{ $s->user->photo }}" alt="photo"></td> --}}
                             <td>{{ $s->user->name }}</td>
                             <td>{{ $s->adm_no }}</td>
-                            <td>
-                                <div class="dropdown">
-                                    <a href="#" class=" btn btn-danger" data-toggle="dropdown"> Manage Payments <i class="icon-arrow-down5"></i>
-                                    </a>
-                            <div class="dropdown-menu dropdown-menu-left">
-                                <a href="{{ route('payments.invoice', [Qs::hash($s->user_id)]) }}" class="dropdown-item">All Payments</a>
-                                @foreach(Pay::getYears($s->user_id) as $py)
-                                @if($py)
-                                    <a href="{{ route('payments.invoice', [Qs::hash($s->user_id), $py]) }}" class="dropdown-item">{{ $py }}</a>
-                                @endif
-                                @endforeach
-                            </div>
+                            <td class="text-right">
+                                <div class="list-icons">
+                                    <div class="dropdown">
+                                        <a href="#" class="list-icons-item" data-toggle="dropdown">
+                                            <i class="icon-menu9"></i>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-left">
+                                            <a href="{{ route('payments.invoice', [Qs::hash($s->user_id)]) }}" class="dropdown-item">All Payments</a>
+                                            @foreach(Pay::getYears($s->user_id) as $py)
+                                            @if($py)
+                                                <a href="{{ route('payments.invoice', [Qs::hash($s->user_id), $py]) }}" class="dropdown-item">{{ $py }}</a>
+                                            @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
 
@@ -80,4 +112,27 @@
             </div>
         </div>
     @endif
+@endsection
+
+@section('scripts')
+<script>
+(function() {
+    function alignPaymentTable() {
+        var $t = $('.dataTables_wrapper table.table-student-payments');
+        if (!$t.length) $t = $('table.table-student-payments');
+        $t.find('thead th:first-child, tbody td:first-child').css({ 'text-align': 'left', 'padding-left': '15px' });
+        $t.find('thead th:nth-child(2), thead th:nth-child(3), tbody td:nth-child(2), tbody td:nth-child(3)').css('text-align', 'left');
+        $t.find('thead th:nth-child(4), tbody td:nth-child(4)').css('text-align', 'right');
+    }
+    $(function() {
+        alignPaymentTable();
+        setTimeout(alignPaymentTable, 400);
+        try {
+            if ($.fn.DataTable && $('.table-student-payments').length && $('.table-student-payments').hasClass('dataTable')) {
+                $('.table-student-payments').DataTable().on('draw', alignPaymentTable);
+            }
+        } catch (e) {}
+    });
+})();
+</script>
 @endsection

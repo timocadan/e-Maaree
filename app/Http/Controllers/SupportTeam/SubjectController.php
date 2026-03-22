@@ -8,6 +8,7 @@ use App\Http\Requests\Subject\SubjectUpdate;
 use App\Repositories\MyClassRepo;
 use App\Repositories\UserRepo;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 
 class SubjectController extends Controller
 {
@@ -22,11 +23,13 @@ class SubjectController extends Controller
         $this->user = $user;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $d['my_classes'] = $this->my_class->all();
         $d['teachers'] = $this->user->getUserByType('teacher');
-        $d['subjects'] = $this->my_class->getAllSubjects();
+        $classId = $request->query('class_id');
+        $d['selected_class'] = $classId ? $this->my_class->find((int) $classId) : null;
+        $d['subjects'] = $d['selected_class'] ? $this->my_class->getSubjectsPaginated(15, (int) $classId) : null;
 
         return view('pages.support_team.subjects.index', $d);
     }
@@ -41,6 +44,10 @@ class SubjectController extends Controller
 
     public function edit($id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $d['s'] = $sub = $this->my_class->findSubject($id);
         $d['my_classes'] = $this->my_class->all();
         $d['teachers'] = $this->user->getUserByType('teacher');
@@ -50,6 +57,10 @@ class SubjectController extends Controller
 
     public function update(SubjectUpdate $req, $id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $data = $req->all();
         $this->my_class->updateSubject($id, $data);
 
@@ -58,6 +69,10 @@ class SubjectController extends Controller
 
     public function destroy($id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $this->my_class->deleteSubject($id);
         return back()->with('flash_success', __('msg.del_ok'));
     }

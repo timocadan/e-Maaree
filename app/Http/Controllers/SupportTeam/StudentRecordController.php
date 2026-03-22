@@ -12,6 +12,7 @@ use App\Repositories\StudentRepo;
 use App\Repositories\UserRepo;
 use App\Http\Controllers\Controller;
 use App\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -35,6 +36,9 @@ class StudentRecordController extends Controller
     public function reset_pass($st_id)
     {
         $st_id = Qs::decodeHash($st_id);
+        if ($st_id === null) {
+            abort(404);
+        }
         $data['password'] = Hash::make('student');
         $this->user->update($st_id, $data);
         return back()->with('flash_success', __('msg.p_reset'));
@@ -50,28 +54,52 @@ class StudentRecordController extends Controller
         return view('pages.support_team.students.add', $data);
     }
 
+    /**
+     * AJAX: search parents by name or phone for autocomplete.
+     */
+    public function searchParents(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
+        $parents = User::where('user_type', 'parent')
+            ->where(function ($query) use ($q) {
+                $query->where('name', 'like', '%' . $q . '%')
+                    ->orWhere('phone', 'like', '%' . $q . '%');
+            })
+            ->orderBy('name')
+            ->limit(15)
+            ->get(['id', 'name', 'phone']);
+        return response()->json($parents);
+    }
+
     public function store(StudentRecordCreate $req)
     {
        $data =  $req->only(Qs::getUserRecord());
        $sr =  $req->only(Qs::getStudentData());
 
-        // Smart Admission: resolve or create parent from Step 1 (parent_name, parent_phone)
-        $parentPhone = trim($req->parent_phone);
+        // Smart Admission: resolve or create parent (avoid duplicate entry)
+        $parentPhone = preg_replace('/\s+/', '', trim($req->parent_phone));
         $parentUser = User::where('user_type', 'parent')->where('phone', $parentPhone)->first();
         if ($parentUser) {
             $sr['my_parent_id'] = $parentUser->id;
         } else {
             $parentName = trim($req->parent_name);
-            $code = 'PAR-' . strtoupper(Str::random(8));
+            $code = 'PAR-' . time() . '-' . strtoupper(Str::random(6));
             while (User::where('code', $code)->exists()) {
-                $code = 'PAR-' . strtoupper(Str::random(8));
+                $code = 'PAR-' . time() . '-' . strtoupper(Str::random(6));
+            }
+            $username = $code;
+            while (User::where('username', $username)->exists()) {
+                $username = 'PAR-' . time() . '-' . strtoupper(Str::random(6));
             }
             $parentUser = $this->user->create([
                 'name' => ucwords($parentName),
                 'phone' => $parentPhone,
                 'user_type' => 'parent',
                 'code' => $code,
-                'username' => $code,
+                'username' => $username,
                 'password' => Hash::make('123456'),
                 'photo' => Qs::getDefaultUserImage(),
             ]);
@@ -87,8 +115,12 @@ class StudentRecordController extends Controller
         $data['code'] = strtoupper(Str::random(10));
         $data['password'] = Hash::make('student');
         $data['photo'] = Qs::getDefaultUserImage();
-        $adm_no = $req->adm_no;
-        $data['username'] = strtoupper(Qs::getAppCode().'/'.$ct.'/'.$sr['year_admitted'].'/'.($adm_no ?: mt_rand(1000, 99999)));
+        $adm_no = trim((string) ($req->adm_no ?? ''));
+        if ($adm_no !== '' && strpos($adm_no, '/') !== false) {
+            $data['username'] = strtoupper($adm_no);
+        } else {
+            $data['username'] = strtoupper(Qs::getAppCode().'/'.$ct.'/'.$sr['year_admitted'].'/'.($adm_no ?: mt_rand(1000, 99999)));
+        }
 
         if($req->hasFile('photo')) {
             $photo = $req->file('photo');
@@ -127,6 +159,10 @@ class StudentRecordController extends Controller
 
     public function not_graduated($sr_id)
     {
+        $sr_id = Qs::decodeHash($sr_id);
+        if ($sr_id === null) {
+            abort(404);
+        }
         $d['grad'] = 0;
         $d['grad_date'] = NULL;
         $d['session'] = Qs::getSetting('current_session');
@@ -138,9 +174,11 @@ class StudentRecordController extends Controller
     public function show($sr_id)
     {
         $sr_id = Qs::decodeHash($sr_id);
-        if(!$sr_id){return Qs::goWithDanger();}
+        if ($sr_id === null) {
+            abort(404);
+        }
 
-        $data['sr'] = $this->student->getRecord(['id' => $sr_id])->first();
+        $data['sr'] = $this->student->getRecord(['id' => $sr_id])->with('my_parent')->first();
 
         /* Prevent Other Students/Parents from viewing Profile of others */
         if(Auth::user()->id != $data['sr']->user_id && !Qs::userIsTeamSAT() && !Qs::userIsMyChild($data['sr']->user_id, Auth::user()->id)){
@@ -153,9 +191,11 @@ class StudentRecordController extends Controller
     public function edit($sr_id)
     {
         $sr_id = Qs::decodeHash($sr_id);
-        if(!$sr_id){return Qs::goWithDanger();}
+        if ($sr_id === null) {
+            abort(404);
+        }
 
-        $data['sr'] = $this->student->getRecord(['id' => $sr_id])->first();
+        $data['sr'] = $this->student->getRecord(['id' => $sr_id])->with('my_parent')->first();
         $data['my_classes'] = $this->my_class->all();
         $data['parents'] = $this->user->getUserByType('parent');
         $data['dorms'] = $this->student->getAllDorms();
@@ -167,7 +207,9 @@ class StudentRecordController extends Controller
     public function update(StudentRecordUpdate $req, $sr_id)
     {
         $sr_id = Qs::decodeHash($sr_id);
-        if(!$sr_id){return Qs::goWithDanger();}
+        if ($sr_id === null) {
+            abort(404);
+        }
 
         $sr = $this->student->getRecord(['id' => $sr_id])->first();
         $d =  $req->only(Qs::getUserRecord());
@@ -185,6 +227,37 @@ class StudentRecordController extends Controller
 
         $srec = $req->only(Qs::getStudentData());
 
+        // Smart Parent: resolve or create parent from name/phone (same as Add)
+        $parentPhone = preg_replace('/\s+/', '', trim($req->parent_phone));
+        $parentUser = User::where('user_type', 'parent')->where('phone', $parentPhone)->first();
+        if ($parentUser) {
+            $srec['my_parent_id'] = $parentUser->id;
+        } else {
+            $parentName = trim($req->parent_name);
+            $code = 'PAR-' . time() . '-' . strtoupper(Str::random(6));
+            while (User::where('code', $code)->exists()) {
+                $code = 'PAR-' . time() . '-' . strtoupper(Str::random(6));
+            }
+            $username = $code;
+            while (User::where('username', $username)->exists()) {
+                $username = 'PAR-' . time() . '-' . strtoupper(Str::random(6));
+            }
+            $parentUser = $this->user->create([
+                'name' => ucwords($parentName),
+                'phone' => $parentPhone,
+                'user_type' => 'parent',
+                'code' => $code,
+                'username' => $username,
+                'password' => Hash::make('123456'),
+                'photo' => Qs::getDefaultUserImage(),
+            ]);
+            $srec['my_parent_id'] = $parentUser->id;
+        }
+
+        if ($req->has('adm_no')) {
+            $srec['adm_no'] = $req->adm_no;
+        }
+
         $this->student->updateRecord($sr_id, $srec); // Update St Rec
 
         /*** If Class/Section is Changed in Same Year, Delete Marks/ExamRecord of Previous Class/Section ****/
@@ -196,7 +269,9 @@ class StudentRecordController extends Controller
     public function destroy($st_id)
     {
         $st_id = Qs::decodeHash($st_id);
-        if(!$st_id){return Qs::goWithDanger();}
+        if ($st_id === null) {
+            abort(404);
+        }
 
         $sr = $this->student->getRecord(['user_id' => $st_id])->first();
         $path = Qs::getUploadPath('student').$sr->user->code;

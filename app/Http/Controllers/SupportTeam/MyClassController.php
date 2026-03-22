@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SupportTeam;
 use App\Helpers\Qs;
 use App\Http\Requests\MyClass\ClassCreate;
 use App\Http\Requests\MyClass\ClassUpdate;
+use App\Models\MyClass;
 use App\Repositories\MyClassRepo;
 use App\Repositories\UserRepo;
 use App\Http\Controllers\Controller;
@@ -37,6 +38,11 @@ class MyClassController extends Controller
         return view('pages.support_team.classes.index', $d);
     }
 
+    public function create()
+    {
+        return redirect()->route('classes.index')->with('focus_tab', 'new-class');
+    }
+
     public function store(ClassCreate $req)
     {
         $data = $req->all();
@@ -54,24 +60,28 @@ class MyClassController extends Controller
         return Qs::jsonStoreOk();
     }
 
-    public function edit($id)
+    public function edit($class_id)
     {
-        $d['c'] = $c = $this->my_class->find($id);
-
-        return is_null($c) ? Qs::goWithDanger('classes.index') : view('pages.support_team.classes.edit', $d) ;
+        $d['c'] = MyClass::findOrFail($class_id);
+        $d['teachers'] = $this->user->getUserByType('teacher');
+        return view('pages.support_team.classes.edit', $d);
     }
 
-    public function update(ClassUpdate $req, $id)
+    public function update(ClassUpdate $req, $class_id)
     {
-        $data = $req->only(['name']);
-        $this->my_class->update($id, $data);
-
+        MyClass::findOrFail($class_id);
+        $data = $req->only(['name', 'teacher_id']);
+        if (isset($data['teacher_id']) && $data['teacher_id'] === '') {
+            $data['teacher_id'] = null;
+        }
+        $this->my_class->update($class_id, $data);
         return Qs::jsonUpdateOk();
     }
 
-    public function destroy($id)
+    public function destroy($class_id)
     {
-        $this->my_class->delete($id);
+        MyClass::findOrFail($class_id);
+        $this->my_class->delete($class_id);
         return back()->with('flash_success', __('msg.del_ok'));
     }
 

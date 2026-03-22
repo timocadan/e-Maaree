@@ -22,7 +22,7 @@
                                 <th>S/N</th>
                                 <th>Name</th>
                                 <th>Description</th>
-                                <th>Action</th>
+                                <th class="no-export">Action</th>
                             </tr>
                             </thead>
                             <tbody>

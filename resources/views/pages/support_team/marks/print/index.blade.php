@@ -12,12 +12,9 @@
                 <td><img src="{{ $s['logo'] }}" style="max-height : 100px;"></td>
 
                 <td style="text-align: center; ">
-                    <strong><span style="color: #1b0c80; font-size: 25px;">{{ strtoupper(Qs::getSetting('system_name')) }}</span></strong><br/>
-                   {{-- <strong><span style="color: #1b0c80; font-size: 20px;">MINNA, NIGER STATE</span></strong><br/>--}}
-                    <strong><span
-                                style="color: #000; font-size: 15px;"><i>{{ ucwords($s['address']) }}</i></span></strong><br/>
-                    <strong><span style="color: #000; font-size: 15px;"> REPORT SHEET {{ '('.strtoupper($class_type->name).')' }}
-                    </span></strong>
+                    <strong><span style="color: #1b0c80; font-size: 22px;">{{ strtoupper(Qs::getSetting('system_name')) }}</span></strong><br/>
+                    <span style="color: #6b7280; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;">Progress report</span><br/>
+                    <span style="color: #374151; font-size: 13px;">{{ ucwords($s['address'] ?? '') }}</span>
                 </td>
                 <td style="width: 100px; height: 100px; float: left;">
                     <img src="{{ $sr->user->photo }}"
@@ -27,25 +24,12 @@
         </table>
         <br/>
 
-        {{--Background Logo--}}
-        <div style="position: relative;  text-align: center; ">
-            <img src="{{ $s['logo'] }}"
-                 style="max-width: 500px; max-height:600px; margin-top: 60px; position:absolute ; opacity: 0.2; margin-left: auto;margin-right: auto; left: 0; right: 0;" />
-        </div>
-
         {{--<!-- SHEET BEGINS HERE-->--}}
 @include('pages.support_team.marks.print.sheet')
 
-        {{--Key to Grading--}}
-        {{--@include('pages.support_team.marks.print.grading')--}}
-
-        {{-- TRAITS - PSCHOMOTOR & AFFECTIVE --}}
-        @include('pages.support_team.marks.print.skills')
-
-        <div style="margin-top: 25px; clear: both;"></div>
-
-        {{--    COMMENTS & SIGNATURE    --}}
-        @include('pages.support_team.marks.print.comments')
+        <div style="margin-top: 40px; text-align: right; clear: both;">
+            <div style="display: inline-block; min-width: 200px; border-top: 1px solid #111; padding-top: 8px; font-size: 7.5pt; letter-spacing: 0.12em; text-transform: uppercase; color: #4b5563;">Principal&rsquo;s signature</div>
+        </div>
 
     </div>
 </div>

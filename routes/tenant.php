@@ -137,37 +137,46 @@ Route::middleware([
                 Route::group(['middleware' => 'teamSA'], function () {
                     Route::get('batch_fix', 'MarkController@batch_fix')->name('marks.batch_fix');
                     Route::put('batch_update', 'MarkController@batch_update')->name('marks.batch_update');
-                    Route::get('tabulation/{exam?}/{class?}/{sec_id?}', 'MarkController@tabulation')->name('marks.tabulation');
+                    Route::get('tabulation/{term?}/{class?}/{sec_id?}', 'MarkController@tabulation')->name('marks.tabulation');
                     Route::post('tabulation', 'MarkController@tabulation_select')->name('marks.tabulation_select');
-                    Route::get('tabulation/print/{exam}/{class}/{sec_id}', 'MarkController@print_tabulation')->name('marks.print_tabulation');
+                    Route::get('tabulation/print/{term}/{class}/{sec_id}', 'MarkController@print_tabulation')->name('marks.print_tabulation');
                 });
 
                 // FOR teamSAT
                 Route::group(['middleware' => 'teamSAT'], function () {
                     Route::get('/', 'MarkController@index')->name('marks.index');
-                    Route::get('manage/{exam}/{class}/{section}/{subject}', 'MarkController@manage')->name('marks.manage');
-                    Route::put('update/{exam}/{class}/{section}/{subject}', 'MarkController@update')->name('marks.update');
-                    Route::put('comment_update/{exr_id}', 'MarkController@comment_update')->name('marks.comment_update');
-                    Route::put('skills_update/{skill}/{exr_id}', 'MarkController@skills_update')->name('marks.skills_update');
+                    Route::get('manage/{term}/{class}/{section}/{subject}', 'MarkController@manage')->name('marks.manage');
+                    Route::put('update/{term}/{class}/{section}/{subject}', 'MarkController@update')->name('marks.update');
                     Route::post('selector', 'MarkController@selector')->name('marks.selector');
-                    Route::get('bulk/{class?}/{section?}', 'MarkController@bulk')->name('marks.bulk');
-                    Route::post('bulk', 'MarkController@bulk_select')->name('marks.bulk_select');
                 });
 
                 Route::get('select_year/{id}', 'MarkController@year_selector')->name('marks.year_selector');
                 Route::post('select_year/{id}', 'MarkController@year_selected')->name('marks.year_select');
                 Route::get('show/{id}/{year}', 'MarkController@show')->name('marks.show');
-                Route::get('print/{id}/{exam_id}/{year}', 'MarkController@print_view')->name('marks.print');
+                Route::get('print/{id}/annual/{year}', 'MarkController@print_annual_student')->name('marks.print_annual');
+                Route::get('print/{id}/{term}/{year}', 'MarkController@print_view')->name('marks.print');
 
             });
 
+            Route::get('class_master', 'ClassMasterController@index')->name('class_master.dashboard');
+            Route::post('class_master/generate_ranks', 'ClassMasterController@generateRanks')->name('class_master.generate_ranks');
+            Route::get('students/search-parents', 'StudentRecordController@searchParents')->name('students.search_parents')->middleware('teamSA');
             Route::resource('students', 'StudentRecordController');
             Route::resource('users', 'UserController');
-            Route::resource('classes', 'MyClassController');
+            Route::get('classes', 'MyClassController@index')->name('classes.index');
+            Route::post('classes', 'MyClassController@store')->name('classes.store');
+            Route::get('classes/create', 'MyClassController@create')->name('classes.create');
+            Route::get('classes/{class_id}/edit', 'MyClassController@edit')->name('classes.edit');
+            Route::put('classes/{class_id}', 'MyClassController@update')->name('classes.update');
+            Route::delete('classes/{class_id}', 'MyClassController@destroy')->name('classes.destroy');
             Route::resource('sections', 'SectionController');
             Route::resource('subjects', 'SubjectController');
-            Route::resource('grades', 'GradeController');
-            Route::resource('exams', 'ExamController');
+            Route::get('grades', 'GradeController@index')->name('grades.index');
+            Route::get('grades/create', 'GradeController@create')->name('grades.create');
+            Route::post('grades', 'GradeController@store')->name('grades.store');
+            Route::get('grades/{grade_id}/edit', 'GradeController@edit')->name('grades.edit');
+            Route::put('grades/{grade_id}', 'GradeController@update')->name('grades.update');
+            Route::get('grades/{grade_id}/delete', 'GradeController@destroy')->name('grades.delete');
             Route::resource('dorms', 'DormController');
             Route::resource('payments', 'PaymentController');
 
@@ -178,6 +187,7 @@ Route::middleware([
             Route::get('get_lga/{state_id}', 'AjaxController@get_lga')->name('get_lga');
             Route::get('get_class_sections/{class_id}', 'AjaxController@get_class_sections')->name('get_class_sections');
             Route::get('get_class_subjects/{class_id}', 'AjaxController@get_class_subjects')->name('get_class_subjects');
+            Route::get('get_next_admission_number/{class_id}', [\App\Http\Controllers\AjaxController::class, 'get_next_admission_number'])->name('ajax.get_next_admission_number');
         });
 
     });
@@ -188,11 +198,16 @@ Route::middleware([
 
         Route::get('/settings', 'SettingController@index')->name('settings');
         Route::put('/settings', 'SettingController@update')->name('settings.update');
+        Route::put('/settings/active_slot', 'SettingController@updateActiveSlot')->name('settings.active_slot');
 
         Route::get('/levels', [LevelsController::class, 'index'])->name('levels.index');
         Route::post('/levels', [LevelsController::class, 'store'])->name('levels.store');
         Route::post('/levels/{level_id}/update', [LevelsController::class, 'update'])->name('levels.update');
         Route::get('/levels/{level_id}/delete', [LevelsController::class, 'destroy'])->name('levels.delete');
+        Route::post('/levels/template', [LevelsController::class, 'storeTemplate'])->name('levels.template.store');
+        Route::put('/levels/template/{template_id}', [LevelsController::class, 'updateTemplate'])->name('levels.template.update');
+        Route::delete('/levels/template/{template_id}', [LevelsController::class, 'destroyTemplate'])->name('levels.template.delete');
+        Route::post('/levels/mapping', [LevelsController::class, 'saveMapping'])->name('levels.mapping.save');
 
     });
 

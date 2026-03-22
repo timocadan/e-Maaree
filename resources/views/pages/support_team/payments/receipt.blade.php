@@ -1,128 +1,113 @@
 <html>
 <head>
-    <title>Receipt_{{ $pr->ref_no.'_'.$sr->user->name }}</title>
+    <title>Receipt_{{ $pr->ref_no }}_{{ $sr->user->name }}</title>
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/receipt.css') }}"/>
+    <style>
+        .receipt-body { font-family: Arial, sans-serif; font-size: 14px; color: #1a1a1a; max-width: 210mm; margin: 0 auto; padding: 20px; }
+        .receipt-school-name { font-size: 28px; font-weight: bold; text-transform: uppercase; text-align: center; margin-bottom: 12px; text-decoration: underline; letter-spacing: 0.02em; }
+        .receipt-navbar { background-color: #002147; color: #fff; padding: 12px 16px; text-align: center; font-size: 11px; margin-bottom: 16px; }
+        .receipt-navbar span { margin: 0 8px; }
+        .receipt-doc-title { font-size: 18px; font-weight: bold; text-align: center; margin: 16px 0 20px 0; }
+        .receipt-meta { display: table; width: 100%; margin-bottom: 20px; font-size: 12px; }
+        .receipt-meta-left { display: table-cell; text-align: left; }
+        .receipt-meta-right { display: table-cell; text-align: right; }
+        .receipt-section-title { background-color: #f5f5f5; padding: 8px 12px; font-weight: bold; font-size: 13px; margin-top: 16px; margin-bottom: 0; border: 1px solid #e0e0e0; }
+        .receipt-table { width: 100%; border-collapse: collapse; margin-top: 0; margin-bottom: 16px; }
+        .receipt-table th, .receipt-table td { border: 1px solid #dddddd; padding: 10px 12px; text-align: left; }
+        .receipt-table th { background-color: #f9f9f9; font-weight: 600; font-size: 12px; }
+        .receipt-table td { font-size: 13px; }
+        .receipt-signature { margin-top: 32px; text-align: right; padding-right: 40px; }
+        .receipt-signature-line { border-bottom: 1px solid #333; width: 220px; margin-left: auto; margin-top: 36px; margin-bottom: 4px; }
+        .receipt-signature-label { font-size: 11px; color: #555; }
+        .receipt-footer { margin-top: 40px; padding-top: 12px; text-align: center; font-size: 10px; color: #999999; border-top: 1px solid #eee; }
+    </style>
 </head>
 <body>
-<div class="container">
-    <div id="print" xmlns:margin-top="http://www.w3.org/1999/xhtml">
-        {{--  School Details--}}
-        <table width="100%">
-            <tr>
+<div class="container receipt-body">
+    <div id="print">
 
-                <td>
-                    <strong><span
-                                style="color: #1b0c80; font-size: 25px;">{{ strtoupper(Qs::getSetting('system_name')) }}</span></strong><br/>
-                    {{-- <strong><span style="color: #1b0c80; font-size: 20px;">MINNA, NIGER STATE</span></strong><br/>--}}
-                    <strong><span
-                                style="color: #000; font-size: 15px;"><i>{{ ucwords($s['address']) }}</i></span></strong>
-                    <br/> <br/>
+        {{-- Official letterhead: School name in LARGE BOLD CAPS --}}
+        <div class="receipt-school-name">{{ strtoupper(Qs::getSetting('system_name') ?: $s['system_name'] ?? 'School') }}</div>
 
-                     <span style="color: #000; font-weight: bold; font-size: 25px;"> PAYMENT RECEIPT</span>
-                </td>
-            </tr>
+        {{-- Navy Blue bar: Address, Tel 1, Tel 2, Email in white --}}
+        @php
+            $addr = Qs::getSetting('address') ?: ($s['address'] ?? '');
+            $tel1 = Qs::getSetting('phone') ?: ($s['phone'] ?? '');
+            $tel2 = Qs::getSetting('phone2') ?: ($s['phone2'] ?? '');
+            $email = Qs::getSetting('system_email') ?: ($s['system_email'] ?? '');
+            $telLine = array_filter([$tel1, $tel2]);
+            $addressBarParts = array_filter([
+                $addr,
+                count($telLine) ? 'Tel: ' . implode(', ', $telLine) : '',
+                $email
+            ]);
+            $addressBarText = implode(' | ', $addressBarParts) ?: ' ';
+        @endphp
+        <div class="receipt-navbar">{{ $addressBarText }}</div>
+
+        {{-- Document info: OFFICIAL PAYMENT RECEIPT, Date, Receipt Number --}}
+        <div class="receipt-doc-title">OFFICIAL PAYMENT RECEIPT</div>
+        <div class="receipt-meta">
+            <div class="receipt-meta-left"><strong>Date:</strong> {{ date('d M Y', strtotime($pr->updated_at ?? $pr->created_at)) }}</div>
+            <div class="receipt-meta-right"><strong>Receipt No:</strong> {{ $pr->ref_no }}</div>
+        </div>
+
+        {{-- Student Information (no photo) --}}
+        <div class="receipt-section-title">STUDENT INFORMATION</div>
+        <table class="receipt-table">
+            <tr><th style="width: 140px;">Name</th><td>{{ $sr->user->name }}</td></tr>
+            <tr><th>ADM No</th><td>{{ $sr->adm_no }}</td></tr>
+            <tr><th>Class</th><td>{{ $sr->my_class->name }}</td></tr>
         </table>
 
-        {{--Background Logo--}}
-        <div style="position: relative;  text-align: center; ">
-            <img src="{{ $s['logo'] }}"
-                 style="max-width: 500px; max-height:600px; margin-top: 60px; position:absolute ; opacity: 0.1; margin-left: auto;margin-right: auto; left: 0; right: 0;"/>
-        </div>
+        {{-- Payment Information --}}
+        <div class="receipt-section-title">PAYMENT INFORMATION</div>
+        <table class="receipt-table">
+            <tr><th style="width: 140px;">Reference</th><td>{{ $payment->ref_no }}</td></tr>
+            <tr><th>Title</th><td>{{ $payment->title }}</td></tr>
+            <tr><th>Amount ({{ Qs::getCurrency() }})</th><td>{{ $payment->amount }}</td></tr>
+            @if($payment->description)
+            <tr><th>Description</th><td>{{ $payment->description }}</td></tr>
+            @endif
+        </table>
 
-        {{--Receipt No --}}
-    <div class="bold arial" style="text-align: center; float:right; width: 200px; padding: 5px; margin-right:30px">
-        <div style="padding: 10px 20px; width: 200px; background-color: lightcyan;">
-            <span  style="font-size: 16px;">Receipt Reference No.</span>
-        </div>
-        <div  style="padding: 10px 20px; width: 200px; background-color: lightyellow;">
-            <span  style="font-size: 25px;">{{ $pr->ref_no }}</span>
-        </div>
-    </div>
-
-        <div style="clear: both"></div>
-
-        {{-- Student Info --}}
-        <div style="margin-top:5px; display: block; background-color: rgba(92, 172, 237, 0.12); padding: 5px; ">
-            <span style="font-weight:bold; font-size: 20px; color: #000; padding-left: 10px">STUDENT INFORMATION</span>
-        </div>
-
-        {{--Photo--}}
-        <div style="margin: 15px;">
-            <img style="width: 100px; height: 100px; float: left;" src="{{ $sr->user->photo }}" alt="...">
-        </div>
-
-       <div style="float: left; margin-left: 20px">
-           <table style="font-size: 16px" class="td-left" cellspacing="5" cellpadding="5">
-               <tr>
-                   <td class="bold">NAME:</td>
-                   <td>{{ $sr->user->name }}</td>
-               </tr>
-               <tr>
-                   <td class="bold">ADM_NO:</td>
-                   <td>{{ $sr->adm_no }}</td>
-               </tr>
-               <tr>
-                   <td class="bold">CLASS:</td>
-                   <td>{{ $sr->my_class->name }}</td>
-               </tr>
-           </table>
-       </div>
-        <div class="clear"></div>
-
-        {{-- Payment Info --}}
-        <div style="margin-top:5px; display: block; background-color: rgba(92, 172, 237, 0.12); padding: 5px; ">
-            <span style="font-weight:bold; font-size: 20px; color: #000; padding-left: 10px">PAYMENT INFORMATION</span>
-        </div>
-
-        <table class="td-left" style="font-size: 16px" cellspacing="2" cellpadding="2">
-                <tr>
-                    <td class="bold">REFERENCE:</td>
-                    <td>{{ $payment->ref_no }}</td>
-                    <td class="bold">TITLE:</td>
-                    <td>{{ $payment->title }}</td>
-                </tr>
-                <tr>
-                    <td class="bold">AMOUNT:</td>
-                    <td>{{ $payment->amount }}</td>
-                    <td class="bold">DESCRIPTION:</td>
-                    <td>{{ $payment->description }}</td>
-                </tr>
-            </table>
-
-        {{-- Payment Desc --}}
-        <div style="margin-top:5px; display: block; background-color: rgba(92, 172, 237, 0.12); padding: 5px; ">
-            <span style="font-weight:bold; font-size: 20px; color: #000; padding-left: 10px">DESCRIPTION</span>
-        </div>
-
-        <table class="td-left" style="font-size: 16px" width="100%" cellspacing="2" cellpadding="2">
-           <thead>
-           <tr>
-               <td class="bold">Date</td>
-               <td class="bold">Amount Paid <del style="text-decoration-style: double">N</del></td>
-               <td class="bold">Balance <del style="text-decoration-style: double">N</del></td>
-           </tr>
-           </thead>
+        {{-- Payment history table: Date, Amount Paid (ETB), Balance (ETB) --}}
+        <div class="receipt-section-title">PAYMENT HISTORY</div>
+        <table class="receipt-table">
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Amount Paid ({{ Qs::getCurrency() }})</th>
+                <th>Balance ({{ Qs::getCurrency() }})</th>
+            </tr>
+            </thead>
             <tbody>
             @foreach($receipts as $r)
                 <tr>
-                    <td>{{ date('D\, j F\, Y', strtotime($r->created_at)) }}</td>
+                    <td>{{ date('d M Y', strtotime($r->created_at)) }}</td>
                     <td>{{ $r->amt_paid }}</td>
                     <td>{{ $r->balance }}</td>
                 </tr>
-                @endforeach
+            @endforeach
             </tbody>
         </table>
 
-        <hr>
-        <div class="bold arial" style="text-align: center; float:right; width: 200px; padding: 5px; margin-right:30px">
-            <div style="padding: 10px 20px; width: 200px; background-color: lightcyan;">
-                <span  style="font-size: 16px;">{{ $pr->paid ? 'PAYMENT STATUS' : 'TOTAL DUE' }}</span>
-            </div>
-            <div  style="padding: 10px 20px; width: 200px; background-color: lightyellow;">
-                <span  style="font-size: 25px;">{{ $pr->paid ? 'CLEARED' : $pr->balance }}</span>
-            </div>
+        {{-- Status --}}
+        <table class="receipt-table">
+            <tr>
+                <th style="width: 140px;">Status</th>
+                <td><strong>{{ $pr->paid ? 'CLEARED' : 'Balance Due: ' . ($pr->balance ?? $payment->amount) . ' ' . Qs::getCurrency() }}</strong></td>
+            </tr>
+        </table>
+
+        {{-- Accountant's Signature (bottom right) --}}
+        <div class="receipt-signature">
+            <div class="receipt-signature-line"></div>
+            <div class="receipt-signature-label">Accountant's Signature</div>
         </div>
-        <div class="clear"></div>
+
+        {{-- Footer --}}
+        <div class="receipt-footer">Generated by e-maaree</div>
     </div>
 </div>
 <script>

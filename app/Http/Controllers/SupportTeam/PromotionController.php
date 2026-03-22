@@ -111,6 +111,10 @@ class PromotionController extends Controller
 
     public function reset($promotion_id)
     {
+        $promotion_id = Qs::decodeHash($promotion_id);
+        if ($promotion_id === null) {
+            abort(404);
+        }
         $this->reset_single($promotion_id);
 
         return redirect()->route('students.promotion_manage')->with('flash_success', __('msg.update_ok'));

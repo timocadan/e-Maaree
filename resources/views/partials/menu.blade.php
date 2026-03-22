@@ -165,20 +165,13 @@
                     </li>
                 @endif
 
-                {{--Exam--}}
+                {{-- Marks & Results (term-based; no Exam list) --}}
                 @if(Qs::userIsTeamSAT())
-                <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['exams.index', 'exams.edit', 'grades.index', 'grades.edit', 'marks.index', 'marks.manage', 'marks.bulk', 'marks.tabulation', 'marks.show', 'marks.batch_fix',]) ? 'nav-item-expanded nav-item-open' : '' }} ">
-                    <a href="#" class="nav-link"><i class="icon-books"></i> <span> Exams</span></a>
+                <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['grades.index', 'grades.edit', 'marks.index', 'marks.manage', 'marks.tabulation', 'marks.show', 'marks.batch_fix']) ? 'nav-item-expanded nav-item-open' : '' }} ">
+                    <a href="#" class="nav-link"><i class="icon-books"></i> <span> Marks & Results</span></a>
 
-                    <ul class="nav nav-group-sub" data-submenu-title="Manage Exams">
+                    <ul class="nav nav-group-sub" data-submenu-title="Marks & Results">
                         @if(Qs::userIsTeamSA())
-
-                        {{--Exam list--}}
-                            <li class="nav-item">
-                                <a href="{{ route('exams.index') }}"
-                                   class="nav-link {{ (Route::is('exams.index')) ? 'active' : '' }}">Exam List</a>
-                            </li>
-
                             {{--Grades list--}}
                             <li class="nav-item">
                                     <a href="{{ route('grades.index') }}"
@@ -203,9 +196,9 @@
                                    class="nav-link {{ in_array(Route::currentRouteName(), ['marks.index']) ? 'active' : '' }}">Marks</a>
                             </li>
 
-                            {{--Marksheet--}}
+                            {{--Class Master Dashboard--}}
                             <li class="nav-item">
-                                <a href="{{ route('marks.bulk') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['marks.bulk', 'marks.show']) ? 'active' : '' }}">Marksheet</a>
+                                <a href="{{ route('class_master.dashboard') }}" class="nav-link {{ Route::is('class_master.dashboard') ? 'active' : '' }}">Class Master Dashboard</a>
                             </li>
 
                             @endif

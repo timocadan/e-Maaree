@@ -23,7 +23,7 @@
 
             <div class="tab-content">
                     <div class="tab-pane fade show active" id="all-classes">
-                        <table class="table datatable-button-html5-columns">
+                        <table class="table datatable-basic">
                             <thead>
                             <tr>
                                 <th>S/N</th>
@@ -112,4 +112,22 @@
 
     {{--Class List Ends--}}
 
+@endsection
+
+@section('scripts')
+<script>
+(function() {
+    if (!$().DataTable) return;
+    $('.datatable-basic').DataTable({
+        autoWidth: false,
+        dom: '<"datatable-header"fl><"datatable-scroll"t><"datatable-footer"ip>',
+        language: {
+            search: '<span>Filter:</span> _INPUT_',
+            searchPlaceholder: 'Type to filter...',
+            lengthMenu: '<span>Show:</span> _MENU_',
+            paginate: { 'first': 'First', 'last': 'Last', 'next': '&rarr;', 'previous': '&larr;' }
+        }
+    });
+})();
+</script>
 @endsection

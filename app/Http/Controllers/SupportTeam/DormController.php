@@ -36,6 +36,10 @@ class DormController extends Controller
 
     public function edit($id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $d['dorm'] = $dorm = $this->dorm->find($id);
 
         return !is_null($dorm) ? view('pages.support_team.dorms.edit', $d)
@@ -44,6 +48,10 @@ class DormController extends Controller
 
     public function update(DormUpdate $req, $id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $data = $req->only(['name', 'description']);
         $this->dorm->update($id, $data);
 
@@ -52,6 +60,10 @@ class DormController extends Controller
 
     public function destroy($id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $this->dorm->find($id)->delete();
         return back()->with('flash_success', __('msg.delete_ok'));
     }

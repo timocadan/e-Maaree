@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\User;
 use Eloquent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 

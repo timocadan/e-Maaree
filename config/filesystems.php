@@ -55,6 +55,18 @@ return [
             'visibility' => 'public',
         ],
 
+        /**
+         * Central (landlord) public disk for tenant-agnostic assets (e.g. school logos).
+         * Not overridden by Stancl tenancy, so files are stored in the main app storage
+         * and can be served from the central APP_URL.
+         */
+        'central_public' => [
+            'driver' => 'local',
+            'root' => base_path('storage/app/public'),
+            'url' => rtrim(env('APP_URL', 'http://localhost'), '/') . '/storage',
+            'visibility' => 'public',
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

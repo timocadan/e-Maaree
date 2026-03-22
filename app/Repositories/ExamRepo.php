@@ -65,7 +65,7 @@ class ExamRepo
 
     public function allGrades()
     {
-        return Grade::orderBy('name')->get();
+        return Grade::orderBy('mark_to', 'desc')->get();
     }
 
     public function getGrade($data)

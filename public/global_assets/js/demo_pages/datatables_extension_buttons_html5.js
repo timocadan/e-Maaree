@@ -37,18 +37,12 @@ var DatatableButtonsHtml5 = function() {
         });
 
 
-        // Basic initialization
+        // Basic initialization (Excel, PDF, Visibility only)
         $('.datatable-button-html5-basic').DataTable({
-            buttons: {            
-                dom: {
-                    button: {
-                        className: 'btn btn-light'
-                    }
-                },
+            buttons: {
+                dom: { button: { className: 'btn btn-light' } },
                 buttons: [
-                    'copyHtml5',
                     'excelHtml5',
-                    'csvHtml5',
                     'pdfHtml5',
                     {
                         extend: 'colvis',
@@ -80,22 +74,27 @@ var DatatableButtonsHtml5 = function() {
         });
 
 
-        // Column selectors
+        // Column selectors (Excel, PDF, Visibility only – no Copy; Action column excluded; PDF landscape A4)
         $('.datatable-button-html5-columns').DataTable({
-            buttons: {            
+            buttons: {
+                dom: { button: { className: 'btn btn-light' } },
                 buttons: [
+                    { extend: 'excelHtml5', className: 'btn btn-light', exportOptions: { columns: ':not(.no-export)' } },
+                    { extend: 'pdfHtml5', className: 'btn btn-light', exportOptions: { columns: ':not(.no-export)' }, orientation: 'landscape', pageSize: 'A4' },
                     {
-                        extend: 'copyHtml5',
-                        className: 'btn btn-light'
-                    },
-                    {
-                        extend: 'excelHtml5',
-                        className: 'btn btn-light'
-                    },
-                    {
-                        extend: 'pdfHtml5',
-                        className: 'btn btn-light'
-                    },
+                        extend: 'colvis',
+                        text: '<i class="icon-three-bars"></i> Visibility',
+                        className: 'btn bg-blue btn-icon dropdown-toggle'
+                    }
+                ]
+            }
+        });
+
+        // Payment module: Visibility only (no Excel/PDF)
+        $('.datatable-payment-no-export').DataTable({
+            buttons: {
+                dom: { button: { className: 'btn btn-light' } },
+                buttons: [
                     {
                         extend: 'colvis',
                         text: '<i class="icon-three-bars"></i> Visibility',
@@ -106,15 +105,10 @@ var DatatableButtonsHtml5 = function() {
         });
 
 
-        // Tab separated values
+        // Tab separated values (no Copy)
         $('.datatable-button-html5-tab').DataTable({
-            buttons: {            
+            buttons: {
                 buttons: [
-                    {
-                        extend: 'copyHtml5',
-                        className: 'btn btn-light',
-                        text: '<i class="icon-copy3 mr-2"></i> Copy'
-                    },
                     {
                         extend: 'csvHtml5',
                         className: 'btn btn-light',

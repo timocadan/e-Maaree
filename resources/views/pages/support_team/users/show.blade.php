@@ -1,95 +1,68 @@
 @extends('layouts.master')
-@section('page_title', 'User Profile - '.$user->name)
+@section('page_title', ($user->user_type === 'parent' ? 'Parent Profile' : 'User Profile') . ' - ' . $user->name)
 @section('content')
+<style>
+    .user-profile-table { border-collapse: separate; border-spacing: 0; }
+    .user-profile-table tbody tr { border-bottom: 1px solid #e5e7eb; }
+    .user-profile-table tbody tr:last-child { border-bottom: 0; }
+    .user-profile-table td { padding: 0.95rem 1.25rem; vertical-align: middle; }
+    .user-profile-table td:first-child { font-weight: 700; color: #6b7280; width: 36%; min-width: 140px; background-color: #f9fafb; }
+    .user-profile-table td:last-child { color: #1A1A1A; background-color: #fff; }
+    .user-profile-table .profile-link { color: #1A1A1A !important; font-weight: bold; }
+    .user-profile-table .profile-link:hover { color: #D32F2F !important; text-decoration: underline; }
+    .user-profile-table .child-item { display: block; margin-bottom: 0.65rem; }
+    .user-profile-table .child-item:last-child { margin-bottom: 0; }
+    .user-profile-table .child-item .icon-user { margin-right: 0.35rem; opacity: 0.85; }
+</style>
     <div class="row">
-        <div class="col-md-3 text-center">
+        <div class="col-md-10 offset-md-1">
             <div class="card">
-                <div class="card-body">
-                    <img style="width: 90%; height:90%" src="{{ $user->photo }}" alt="photo" class="rounded-circle">
-                    <br>
-                    <h3 class="mt-3">{{ $user->name }}</h3>
+                @if(Qs::userIsTeamSA())
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">{{ $user->user_type === 'parent' ? 'Parent Profile' : 'User Profile' }}</h6>
+                    <a href="{{ route('users.edit', Qs::hash($user->id)) }}" class="btn btn-sm btn-light border"><i class="icon-pencil mr-1"></i> Edit</a>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-9">
-            <div class="card">
+                @else
+                <div class="card-header py-3">
+                    <h6 class="card-title mb-0">{{ $user->user_type === 'parent' ? 'Parent Profile' : 'User Profile' }}</h6>
+                </div>
+                @endif
                 <div class="card-body">
                     <ul class="nav nav-tabs nav-tabs-highlight">
                         <li class="nav-item">
-                            <a href="#" class="nav-link active" >{{ $user->name }}</a>
+                            <a href="#" class="nav-link active">{{ $user->name }}</a>
                         </li>
                     </ul>
 
                     <div class="tab-content">
                         {{--Basic Info--}}
                         <div class="tab-pane fade show active" id="basic-info">
-                            <table class="table table-bordered">
+                            <table class="table table-bordered user-profile-table">
                                 <tbody>
                                 <tr>
-                                    <td class="font-weight-bold">Name</td>
-                                    <td>{{ $user->name }}</td>
+                                    <td>User Type</td>
+                                    <td>{{ ucfirst($user->user_type) }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="font-weight-bold">Gender</td>
-                                    <td>{{ $user->gender }}</td>
+                                    <td>Email</td>
+                                    <td>{{ $user->email ?: '—' }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="font-weight-bold">Address</td>
-                                    <td>{{ $user->address }}</td>
+                                    <td>Address</td>
+                                    <td>{{ isset($display_address) && trim($display_address ?? '') !== '' ? $display_address : '—' }}</td>
                                 </tr>
-                                @if($user->email)
-                                    <tr>
-                                        <td class="font-weight-bold">Email</td>
-                                        <td>{{$user->email }}</td>
-                                    </tr>
-                                @endif
-                                @if($user->username)
-                                    <tr>
-                                        <td class="font-weight-bold">Username</td>
-                                        <td>{{$user->username }}</td>
-                                    </tr>
-                                @endif
                                 @if($user->phone)
                                     <tr>
-                                        <td class="font-weight-bold">Phone</td>
-                                        <td>{{$user->phone.' '.$user->phone2 }}</td>
-                                    </tr>
-                                @endif
-                                <tr>
-                                    <td class="font-weight-bold">Birthday</td>
-                                    <td>{{$user->dob }}</td>
-                                </tr>
-                                @if($user->bg_id)
-                                    <tr>
-                                        <td class="font-weight-bold">Blood Group</td>
-                                        <td>{{$user->blood_group->name }}</td>
-                                    </tr>
-                                @endif
-                                @if($user->nal_id)
-                                    <tr>
-                                        <td class="font-weight-bold">Nationality</td>
-                                        <td>{{$user->nationality->name }}</td>
-                                    </tr>
-                                @endif
-                                @if($user->state_id)
-                                    <tr>
-                                        <td class="font-weight-bold">State</td>
-                                        <td>{{$user->state->name }}</td>
-                                    </tr>
-                                @endif
-                                @if($user->lga_id)
-                                    <tr>
-                                        <td class="font-weight-bold">LGA</td>
-                                        <td>{{$user->lga->name }}</td>
+                                        <td>Phone</td>
+                                        <td>{{ trim($user->phone.' '.$user->phone2) }}</td>
                                     </tr>
                                 @endif
                                 @if($user->user_type == 'parent')
                                     <tr>
-                                        <td class="font-weight-bold">Children/Ward</td>
+                                        <td>Children/Ward</td>
                                         <td>
-                                        @foreach(Qs::findMyChildren($user->id) as $sr)
-                                            <span> - <a href="{{ route('students.show', Qs::hash($sr->id)) }}">{{ $sr->user->name.' - '.$sr->my_class->name. ' '.$sr->section->name }}</a></span><br>
-
+                                            @foreach(Qs::findMyChildren($user->id) as $sr)
+                                                <a class="profile-link child-item" href="{{ route('students.show', Qs::hash($sr->id)) }}"><i class="icon-user"></i> {{ $sr->user->name }} — {{ $sr->my_class->name }} {{ $sr->section->name }}</a>
                                             @endforeach
                                         </td>
                                     </tr>
@@ -97,10 +70,10 @@
 
                                 @if($user->user_type == 'teacher')
                                     <tr>
-                                        <td class="font-weight-bold">My Subjects</td>
+                                        <td>My Subjects</td>
                                         <td>
                                             @foreach(Qs::findTeacherSubjects($user->id) as $sub)
-                                                <span> - {{ $sub->name.' ('.$sub->my_class->name.')' }}</span><br>
+                                                <span class="d-block mb-1">{{ $sub->name }} ({{ $sub->my_class->name }})</span>
                                             @endforeach
                                         </td>
                                     </tr>

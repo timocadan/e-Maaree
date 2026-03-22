@@ -18,23 +18,23 @@
 
         <th rowspan="2">GRADE</th>
         <th rowspan="2">SUBJECT <br> POSITION</th>
-        <th rowspan="2">REMARKS</th>
     </tr>
     </thead>
 
     <tbody>
+    @php $termNum = $termNum ?? $exr->term ?? 1; @endphp
     @foreach($subjects as $sub)
         <tr>
             <td>{{ $loop->iteration }}</td>
             <td>{{ $sub->name }}</td>
-            @foreach($marks->where('subject_id', $sub->id)->where('exam_id', $ex->id) as $mk)
+            @foreach($marks->where('subject_id', $sub->id)->where('term', $termNum) as $mk)
                 <td>{{ ($mk->t1) ?: '-' }}</td>
                 <td>{{ ($mk->t2) ?: '-' }}</td>
                 <td>{{ ($mk->exm) ?: '-' }}</td>
                 <td>
-                    @if($ex->term === 1) {{ ($mk->tex1) }}
-                    @elseif ($ex->term === 2) {{ ($mk->tex2) }}
-                    @elseif ($ex->term === 3) {{ ($mk->tex3) }}
+                    @if($termNum == 1) {{ ($mk->tex1) }}
+                    @elseif($termNum == 2) {{ ($mk->tex2) }}
+                    @elseif($termNum == 3) {{ ($mk->tex3) }}
                     @else {{ '-' }}
                     @endif
                 </td>
@@ -48,17 +48,17 @@
                      <td>{{ $mk->cum_ave ?: '-' }}</td>
                  @endif--}}
 
-                {{--Grade, Subject Position & Remarks--}}
                 <td>{{ ($mk->grade) ? $mk->grade->name : '-' }}</td>
                 <td>{!! ($mk->grade) ? Mk::getSuffix($mk->sub_pos) : '-' !!}</td>
-                <td>{{ ($mk->grade) ? $mk->grade->remark : '-' }}</td>
             @endforeach
         </tr>
     @endforeach
     <tr>
-        <td colspan="4"><strong>TOTAL SCORES OBTAINED: </strong> {{ $exr->total }}</td>
-        <td colspan="3"><strong>FINAL AVERAGE: </strong> {{ $exr->ave }}</td>
-        <td colspan="2"><strong>CLASS AVERAGE: </strong> {{ $exr->class_ave }}</td>
+        <td colspan="8" class="text-left pl-3">
+            <strong>Total scores:</strong> {{ $exr->total }}
+            &nbsp;&nbsp;&nbsp;
+            <strong>Average:</strong> {{ $exr->ave }}
+        </td>
     </tr>
     </tbody>
 </table>

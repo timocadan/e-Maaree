@@ -41,6 +41,10 @@ class SectionController extends Controller
 
     public function edit($id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $d['s'] = $s = $this->my_class->findSection($id);
         $d['teachers'] = $this->user->getUserByType('teacher');
 
@@ -49,6 +53,10 @@ class SectionController extends Controller
 
     public function update(SectionUpdate $req, $id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $data = $req->only(['name', 'teacher_id']);
         $this->my_class->updateSection($id, $data);
 
@@ -57,6 +65,10 @@ class SectionController extends Controller
 
     public function destroy($id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         if($this->my_class->isActiveSection($id)){
             return back()->with('pop_warning', 'Every class must have a default section, You Cannot Delete It');
         }

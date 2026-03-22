@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SupportTeam;
 use App\Helpers\Qs;
 use App\Http\Requests\Exam\ExamCreate;
 use App\Http\Requests\Exam\ExamUpdate;
+use App\Models\Exam;
 use App\Repositories\ExamRepo;
 use App\Http\Controllers\Controller;
 
@@ -25,6 +26,11 @@ class ExamController extends Controller
         return view('pages.support_team.exams.index', $d);
     }
 
+    public function create()
+    {
+        return redirect()->route('exams.index')->with('focus_tab', 'new-exam');
+    }
+
     public function store(ExamCreate $req)
     {
         $data = $req->only(['name', 'term']);
@@ -34,23 +40,24 @@ class ExamController extends Controller
         return back()->with('flash_success', __('msg.store_ok'));
     }
 
-    public function edit($id)
+    public function edit($exam_id)
     {
-        $d['ex'] = $this->exam->find($id);
+        $d['ex'] = Exam::findOrFail($exam_id);
         return view('pages.support_team.exams.edit', $d);
     }
 
-    public function update(ExamUpdate $req, $id)
+    public function update(ExamUpdate $req, $exam_id)
     {
+        Exam::findOrFail($exam_id);
         $data = $req->only(['name', 'term']);
-
-        $this->exam->update($id, $data);
+        $this->exam->update($exam_id, $data);
         return back()->with('flash_success', __('msg.update_ok'));
     }
 
-    public function destroy($id)
+    public function destroy($exam_id)
     {
-        $this->exam->delete($id);
+        Exam::findOrFail($exam_id);
+        $this->exam->delete($exam_id);
         return back()->with('flash_success', __('msg.del_ok'));
     }
 }

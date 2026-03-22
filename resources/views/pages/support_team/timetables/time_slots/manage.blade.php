@@ -11,7 +11,7 @@
                 <th>S/N</th>
                 <th>Start Time</th>
                 <th>End Time</th>
-                <th>Action</th>
+                <th class="no-export">Action</th>
             </tr>
             </thead>
             <tbody>

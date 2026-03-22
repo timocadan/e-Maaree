@@ -44,6 +44,9 @@ class UserController extends Controller
     public function edit($id)
     {
         $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         $d['user'] = $this->user->find($id);
         $d['states'] = $this->loc->getStates();
         $d['users'] = $this->user->getPTAUsers();
@@ -54,6 +57,10 @@ class UserController extends Controller
 
     public function reset_pass($id)
     {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
         // Redirect if Making Changes to Head of Super Admins
         if(Qs::headSA($id)){
             return back()->with('flash_danger', __('msg.denied'));
@@ -77,8 +84,25 @@ class UserController extends Controller
         $user_is_staff = in_array($user_type, Qs::getStaff());
         $user_is_teamSA = in_array($user_type, Qs::getTeamSA());
 
-        $staff_id = Qs::getAppCode().'/STAFF/'.date('Y/m', strtotime($req->emp_date)).'/'.mt_rand(1000, 9999);
-        $data['username'] = $uname = ($user_is_teamSA) ? $req->username : $staff_id;
+        $emp_date = $req->emp_date ?: now()->format('Y-m-d');
+        $staff_id = Qs::getAppCode().'/STAFF/'.date('Y/m', strtotime($emp_date)).'/'.mt_rand(1000, 9999);
+        if ($user_is_teamSA) {
+            $uname = $req->username;
+            if (empty($uname)) {
+                if (!empty($req->email)) {
+                    $uname = strtolower(trim(explode('@', $req->email)[0]));
+                } else {
+                    $uname = strtolower(preg_replace('/[^a-z0-9]+/i', '.', trim($req->name)));
+                }
+                if (strlen($uname) < 8) {
+                    $uname .= '.' . Str::random(4);
+                }
+                $uname = \App\User::where('username', $uname)->exists() ? ($uname . '.' . mt_rand(100, 999)) : $uname;
+            }
+        } else {
+            $uname = $staff_id;
+        }
+        $data['username'] = $uname;
 
         $pass = $req->password ?: $user_type;
         $data['password'] = Hash::make($pass);
@@ -103,6 +127,7 @@ class UserController extends Controller
             $d2 = $req->only(Qs::getStaffRecord());
             $d2['user_id'] = $user->id;
             $d2['code'] = $staff_id;
+            $d2['emp_date'] = $d2['emp_date'] ?: $emp_date;
             $this->user->createStaffRecord($d2);
         }
 
@@ -112,7 +137,9 @@ class UserController extends Controller
     public function update(UserRequest $req, $id)
     {
         $id = Qs::decodeHash($id);
-
+        if ($id === null) {
+            abort(404);
+        }
         // Redirect if Making Changes to Head of Super Admins
         if(Qs::headSA($id)){
             return Qs::json(__('msg.denied'), FALSE);
@@ -127,6 +154,12 @@ class UserController extends Controller
         $data = $req->except(Qs::getStaffRecord());
         $data['name'] = ucwords($req->name);
         $data['user_type'] = $user_type;
+        // Normalize optional fields: empty string -> null to avoid DB issues (columns are nullable)
+        foreach (['gender', 'state_id', 'lga_id', 'nal_id', 'bg_id', 'email', 'phone', 'phone2', 'address'] as $key) {
+            if (array_key_exists($key, $data) && $data[$key] === '') {
+                $data[$key] = null;
+            }
+        }
 
         if($user_is_staff && !$user_is_teamSA){
             $data['username'] = Qs::getAppCode().'/STAFF/'.date('Y/m', strtotime($req->emp_date)).'/'.mt_rand(1000, 9999);
@@ -158,9 +191,24 @@ class UserController extends Controller
     public function show($user_id)
     {
         $user_id = Qs::decodeHash($user_id);
-        if(!$user_id){return back();}
+        if ($user_id === null) {
+            abort(404);
+        }
 
         $data['user'] = $this->user->find($user_id);
+        $user = $data['user'];
+
+        // Smart address: for parents with empty address, show first child's address
+        $data['display_address'] = $user->address;
+        if ($user->user_type == 'parent') {
+            $addr = trim($user->address ?? '');
+            if ($addr === '') {
+                $firstChild = Qs::findMyChildren($user_id)->first();
+                if ($firstChild && $firstChild->user) {
+                    $data['display_address'] = $firstChild->user->address ?? '';
+                }
+            }
+        }
 
         /* Prevent Other Students from viewing Profile of others*/
         if(Auth::user()->id != $user_id && !Qs::userIsTeamSAT() && !Qs::userIsMyChild(Auth::user()->id, $user_id)){
@@ -173,7 +221,9 @@ class UserController extends Controller
     public function destroy($id)
     {
         $id = Qs::decodeHash($id);
-
+        if ($id === null) {
+            abort(404);
+        }
         // Redirect if Making Changes to Head of Super Admins
         if(Qs::headSA($id)){
             return back()->with('pop_error', __('msg.denied'));

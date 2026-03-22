@@ -1,83 +1,66 @@
 {{--<!--NAME , CLASS AND OTHER INFO -->--}}
-<table style="width:100%; border-collapse:collapse; ">
+<table style="width:100%; border-collapse:collapse; margin-bottom:16px; font-family:system-ui,sans-serif; font-size:10pt; color:#374151;">
     <tbody>
     <tr>
-        <td><strong>NAME:</strong> {{ strtoupper($sr->user->name) }}</td>
-        <td><strong>ADM NO:</strong> {{ $sr->adm_no }}</td>
-        <td><strong>HOUSE:</strong> {{ strtoupper($sr->house) }}</td>
-        <td><strong>CLASS:</strong> {{ strtoupper($my_class->name) }}</td>
+        <td style="padding:4px 0;">
+            <strong>Name:</strong> {{ strtoupper($sr->user->name) }}
+            <span style="color:#e5e7eb;padding:0 8px;">|</span>
+            <strong>ID:</strong> {{ $sr->adm_no }}
+            <span style="color:#e5e7eb;padding:0 8px;">|</span>
+            <strong>Class:</strong> {{ strtoupper($my_class->name) }}
+        </td>
+        <td style="padding:4px 0;text-align:right;">
+            <strong>Year:</strong> {{ $year }}
+            <span style="color:#e5e7eb;padding:0 8px;">|</span>
+            <strong>Term:</strong> {!! strip_tags(Mk::getSuffix($term ?? 1)) !!}
+            <span style="color:#e5e7eb;padding:0 8px;">|</span>
+            <strong>Rank:</strong> <span style="color:#D32F2F;font-weight:600;">{!! isset($exr->pos) ? Mk::getSuffix((int)$exr->pos) : '—' !!}</span>
+        </td>
     </tr>
-    <tr>
-        <td><strong>REPORT SHEET FOR</strong> {!! strtoupper(Mk::getSuffix($ex->term)) !!} TERM </td>
-        <td><strong>ACADEMIC YEAR:</strong> {{ $ex->year }}</td>
-        <td><strong>AGE:</strong> {{ $sr->age ?: ($sr->user->dob ? date_diff(date_create($sr->user->dob), date_create('now'))->y : '-') }}</td>
-    </tr>
-
     </tbody>
 </table>
 
 
 {{--Exam Table--}}
-<table style="width:100%; border-collapse:collapse; border: 1px solid #000; margin: 10px auto;" border="1">
+<table style="width:100%; border-collapse:collapse; margin:12px auto; font-family:system-ui,sans-serif; font-size:9pt;" class="emaaree-legacy-marks-table">
     <thead>
-    <tr>
-        <th rowspan="2">SUBJECTS</th>
-        <th colspan="3">CONTINUOUS ASSESSMENT</th>
-        <th rowspan="2">EXAM<br>(60)</th>
-        <th rowspan="2">FINAL MARKS <br> (100%)</th>
-        <th rowspan="2">GRADE</th>
-        <th rowspan="2">SUBJECT <br> POSITION</th>
-
-
-      {{--  @if($ex->term == 3) --}}{{-- 3rd Term --}}{{--
-        <th rowspan="2">FINAL MARKS <br>(100%) 3<sup>RD</sup> TERM</th>
-        <th rowspan="2">1<sup>ST</sup> <br> TERM</th>
-        <th rowspan="2">2<sup>ND</sup> <br> TERM</th>
-        <th rowspan="2">CUM (300%) <br> 1<sup>ST</sup> + 2<sup>ND</sup> + 3<sup>RD</sup></th>
-        <th rowspan="2">CUM AVE</th>
-        <th rowspan="2">GRADE</th>
-        @endif--}}
-
-        <th rowspan="2">REMARKS</th>
+    <tr style="background:#002147;color:#fff;">
+        <th rowspan="2" style="padding:6px 8px;font-weight:600;font-size:7pt;letter-spacing:0.06em;text-transform:uppercase;text-align:left;">Subjects</th>
+        <th colspan="3" style="padding:6px 8px;font-weight:600;font-size:7pt;letter-spacing:0.06em;text-transform:uppercase;">Continuous assessment</th>
+        <th rowspan="2" style="padding:6px 8px;font-weight:600;font-size:7pt;letter-spacing:0.06em;text-transform:uppercase;">Exam<br>(60)</th>
+        <th rowspan="2" style="padding:6px 8px;font-weight:600;font-size:7pt;letter-spacing:0.06em;text-transform:uppercase;">Final<br>(100%)</th>
+        <th rowspan="2" style="padding:6px 8px;font-weight:600;font-size:7pt;letter-spacing:0.06em;text-transform:uppercase;">Grade</th>
+        <th rowspan="2" style="padding:6px 8px;font-weight:600;font-size:7pt;letter-spacing:0.06em;text-transform:uppercase;">Sub.<br>pos.</th>
     </tr>
-    <tr>
-        <th>CA1(20)</th>
-        <th>CA2(20)</th>
-        <th>TOTAL(40)</th>
+    <tr style="background:#002147;color:#fff;">
+        <th style="padding:5px 6px;font-size:7pt;">CA1(20)</th>
+        <th style="padding:5px 6px;font-size:7pt;">CA2(20)</th>
+        <th style="padding:5px 6px;font-size:7pt;">Total(40)</th>
     </tr>
     </thead>
     <tbody>
     @foreach($subjects as $sub)
         <tr>
-            <td style="font-weight: bold">{{ $sub->name }}</td>
-            @foreach($marks->where('subject_id', $sub->id)->where('exam_id', $ex->id) as $mk)
-                <td>{{ $mk->t1 ?: '-' }}</td>
-                <td>{{ $mk->t2 ?: '-' }}</td>
-                <td>{{ $mk->tca ?: '-' }}</td>
-                <td>{{ $mk->exm ?: '-' }}</td>
-
-                <td>{{ $mk->$tex ?: '-'}}</td>
-                <td>{{ $mk->grade ? $mk->grade->name : '-' }}</td>
-                <td>{!! ($mk->grade) ? Mk::getSuffix($mk->sub_pos) : '-' !!}</td>
-                <td>{{ $mk->grade ? $mk->grade->remark : '-' }}</td>
-
-                {{--@if($ex->term == 3)
-                    <td>{{ $mk->tex3 ?: '-' }}</td>
-                    <td>{{ Mk::getSubTotalTerm($student_id, $sub->id, 1, $mk->my_class_id, $year) }}</td>
-                    <td>{{ Mk::getSubTotalTerm($student_id, $sub->id, 2, $mk->my_class_id, $year) }}</td>
-                    <td>{{ $mk->cum ?: '-' }}</td>
-                    <td>{{ $mk->cum_ave ?: '-' }}</td>
-                    <td>{{ $mk->grade ? $mk->grade->name : '-' }}</td>
-                    <td>{{ $mk->grade ? $mk->grade->remark : '-' }}</td>
-                @endif--}}
-
+            <td style="font-weight:600;border:none;border-bottom:1px solid #eee;padding:10px 8px;text-align:left;">{{ $sub->name }}</td>
+            @foreach($marks->where('subject_id', $sub->id)->where('term', $term ?? 1) as $mk)
+                <td style="border:none;border-bottom:1px solid #eee;padding:10px 8px;text-align:center;">{{ $mk->t1 ?: '-' }}</td>
+                <td style="border:none;border-bottom:1px solid #eee;padding:10px 8px;text-align:center;">{{ $mk->t2 ?: '-' }}</td>
+                <td style="border:none;border-bottom:1px solid #eee;padding:10px 8px;text-align:center;">{{ $mk->tca ?: '-' }}</td>
+                <td style="border:none;border-bottom:1px solid #eee;padding:10px 8px;text-align:center;">{{ $mk->exm ?: '-' }}</td>
+                <td style="border:none;border-bottom:1px solid #eee;padding:10px 8px;text-align:center;">{{ $mk->$tex ?: '-'}}</td>
+                <td style="border:none;border-bottom:1px solid #eee;padding:10px 8px;text-align:center;">{{ $mk->grade ? $mk->grade->name : '-' }}</td>
+                <td style="border:none;border-bottom:1px solid #eee;padding:10px 8px;text-align:center;">{!! ($mk->grade) ? Mk::getSuffix($mk->sub_pos) : '-' !!}</td>
             @endforeach
         </tr>
     @endforeach
     <tr>
-        <td colspan="3"><strong>TOTAL SCORES OBTAINED: </strong> {{ $exr->total }}</td>
-        <td colspan="3"><strong>FINAL AVERAGE: </strong> {{ $exr->ave }}</td>
-        <td colspan="3"><strong>CLASS AVERAGE: </strong> {{ $exr->class_ave }}</td>
+        <td colspan="8" style="border:none;border-top:1px solid #e5e7eb;padding:24px 8px 8px;text-align:center;font-size:9pt;">
+            <span style="color:#9ca3af;font-size:7pt;letter-spacing:0.14em;text-transform:uppercase;">Term result summary</span><br><br>
+            <span style="color:#6b7280;font-size:8pt;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;">Total scores</span>
+            <strong style="font-weight:600;margin-right:28px;">{{ $exr->total }}</strong>
+            <span style="color:#6b7280;font-size:8pt;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;">Average</span>
+            <strong style="font-weight:600;">{{ $exr->ave }}</strong>
+        </td>
     </tr>
     </tbody>
 </table>

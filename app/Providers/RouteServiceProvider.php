@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Helpers\Qs;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
@@ -38,9 +37,8 @@ class RouteServiceProvider extends ServiceProvider
     {
         //parent::boot();
 
-        Route::bind('id', function($value){
-            return Qs::decodeHash($value);
-        });
+        // Global route binding for 'id' removed: not every {id} is a hashed integer.
+        // Controllers decode hashed IDs manually and abort(404) on invalid hash.
 
         $this->configureRateLimiting();
 

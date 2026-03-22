@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\SupportTeam;
 
+use App\Helpers\Qs;
 use App\Http\Requests\Grade\GradeCreate;
 use App\Http\Requests\Grade\GradeUpdate;
+use App\Models\Grade;
 use App\Repositories\ExamRepo;
 use App\Http\Controllers\Controller;
 use App\Repositories\MyClassRepo;
@@ -28,6 +30,11 @@ class GradeController extends Controller
         return view('pages.support_team.grades.index', $d);
     }
 
+    public function create()
+    {
+        return redirect()->route('grades.index')->with('focus_tab', 'new-grade');
+    }
+
     public function store(GradeCreate $req)
     {
         $data = $req->all();
@@ -36,24 +43,25 @@ class GradeController extends Controller
         return back()->with('flash_success', __('msg.store_ok'));
     }
 
-    public function edit($id)
+    public function edit($grade_id)
     {
         $d['class_types'] = $this->my_class->getTypes();
-        $d['gr'] = $this->exam->findGrade($id);
+        $d['gr'] = Grade::findOrFail($grade_id);
         return view('pages.support_team.grades.edit', $d);
     }
 
-    public function update(GradeUpdate $req, $id)
+    public function update(GradeUpdate $req, $grade_id)
     {
+        Grade::findOrFail($grade_id);
         $data = $req->all();
-
-        $this->exam->updateGrade($id, $data);
+        $this->exam->updateGrade($grade_id, $data);
         return back()->with('flash_success', __('msg.update_ok'));
     }
 
-    public function destroy($id)
+    public function destroy($grade_id)
     {
-        $this->exam->deleteGrade($id);
+        Grade::findOrFail($grade_id);
+        $this->exam->deleteGrade($grade_id);
         return back()->with('flash_success', __('msg.del_ok'));
     }
 }

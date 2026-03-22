@@ -11,7 +11,7 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <form method="post" action="{{ route('grades.update', $gr->id) }}">
+                    <form method="post" action="{{ request()->root() . '/grades/' . $gr->id }}">
                         @csrf @method('PUT')
                         <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">Name <span class="text-danger">*</span></label>
@@ -20,17 +20,8 @@
                             </div>
                         </div>
 
-                        <div class="form-group row">
-                            <label for="class_type_id" class="col-lg-3 col-form-label font-weight-semibold">Grade Type</label>
-                            <div class="col-lg-9">
-                                <select class="form-control select" name="class_type_id" id="class_type_id">
-                                    <option value="">Not Applicable</option>
-                                    @foreach($class_types as $ct)
-                                        <option {{ $gr->class_type_id == $ct->id ? 'selected' : '' }} value="{{ $ct->id }}">{{ $ct->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
+                        {{-- Grade Type (hidden to keep form minimalist) --}}
+                        <input type="hidden" name="class_type_id" value="{{ $gr->class_type_id }}">
 
                         <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">Mark From <span class="text-danger">*</span></label>
@@ -49,17 +40,12 @@
                         <div class="form-group row">
                             <label for="remark" class="col-lg-3 col-form-label font-weight-semibold">Remark</label>
                             <div class="col-lg-9">
-                                <select  class="form-control select" name="remark" id="remark">
-                                    <option value="">Select Remark...</option>
-                                    @foreach(Mk::getRemarks() as $rem)
-                                        <option {{ $gr->remark == $rem ? 'selected' : '' }} value="{{ $rem }}">{{ $rem }}</option>
-                                    @endforeach
-                                </select>
+                                <input type="text" name="remark" id="remark" value="{{ old('remark', $gr->remark) }}" class="form-control" placeholder="e.g. Excellent or Aad u Wanaagsan">
                             </div>
                         </div>
 
                         <div class="text-right">
-                            <button type="submit" class="btn btn-primary">Submit form <i class="icon-paperplane ml-2"></i></button>
+                            <button type="submit" class="btn btn-primary" style="background-color: #D32F2F; border-color: #D32F2F;">Submit form <i class="icon-paperplane ml-2"></i></button>
                         </div>
                     </form>
                 </div>

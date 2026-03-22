@@ -6,7 +6,7 @@ use Eloquent;
 
 class MyClass extends Eloquent
 {
-    protected $fillable = ['name', 'class_type_id'];
+    protected $fillable = ['name', 'class_type_id', 'teacher_id'];
 
     public function section()
     {
@@ -21,5 +21,19 @@ class MyClass extends Eloquent
     public function student_record()
     {
         return $this->hasMany(StudentRecord::class);
+    }
+
+    public function form_master()
+    {
+        return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    /**
+     * Alias for form master/teacher display.
+     * Some UI templates expect `$my_class->teacher`.
+     */
+    public function teacher()
+    {
+        return $this->belongsTo(User::class, 'teacher_id');
     }
 }
