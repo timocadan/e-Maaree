@@ -18,6 +18,7 @@
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Running the application](#running-the-application)
+- [Local development quick reference](#local-development-quick-reference)
 - [Project structure](#project-structure)
 - [Conventions for developers](#conventions-for-developers)
 - [Default credentials](#default-credentials)
@@ -152,6 +153,18 @@ php artisan serve --port=8001
 
 ---
 
+## Local development quick reference
+
+| Step | Command or note |
+|------|------------------|
+| Serve app | `php artisan serve --port=8001` — use the same port as `APP_URL` (e.g. `http://localhost:8001`). |
+| Tenant host | Add e.g. `127.0.0.1 school1.localhost` to your OS `hosts` file so `http://school1.localhost:8001` resolves. |
+| Central DB after `git pull` | `php artisan migrate` (adds/updates central tables such as `users.username`). |
+| Existing tenants after `git pull` | `php artisan tenants:migrate` — or target one tenant: `php artisan tenants:migrate --tenants=school1` (see [stancl docs](https://tenancyforlaravel.com/) / `TENANCY_VERIFICATION.md`). |
+| First landlord user | Register on the **central** URL (`/register`), then set `username` on that user (login uses **username**; registration does not fill it). Example: `php artisan tinker` → `App\User::where('email', 'your@email')->update(['username' => 'admin']);` |
+
+---
+
 ## Project structure
 
 | Path | Description |
@@ -203,7 +216,7 @@ After tenant seeding (e.g. `TenantDatabaseSeeder` / `php artisan db:seed` in ten
 | Accountant | accountant | accountant@accountant.com | password |
 | Student | student | student@student.com | password |
 
-**Central (landlord)** accounts depend on how you seed the central database; ensure each central user has a unique `username` set if you create them manually.
+**Central (landlord)** — there is no default landlord user in `DatabaseSeeder`. Create the first account via **`/register`** on the central domain (`APP_URL`), then set a **`username`** on that row (required for login). You can use `php artisan tinker` as in [Local development quick reference](#local-development-quick-reference). Each central user must have a unique `username`.
 
 **Change all default passwords before any production or shared environment.**
 
