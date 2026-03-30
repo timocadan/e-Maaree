@@ -10,28 +10,30 @@
     <title>Student Progress Report — {{ $sr->user->name }}</title>
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/my_print.css') }}"/>
     @include('pages.support_team.marks.print.partials.master_print_styles')
+    @include('pages.support_team.marks.print.partials.term_marksheet_polish')
 </head>
-<body class="emaaree-print-body">
+<body class="emaaree-print-body term-progress-report">
+@include('pages.support_team.marks.print.partials.draft_watermark', ['draft_watermark' => $draft_watermark ?? false])
 <div class="emaaree-print-wrap">
     @include('pages.support_team.marks.print.partials.master_letterhead')
 
     <p class="emaaree-doc-title">Progress report</p>
 
-    <div class="emaaree-meta-lines" role="presentation">
-        <div class="meta-row">
-            <div class="meta-cell meta-inline">
-                <span class="meta-k">Name</span> {{ strtoupper($sr->user->name) }}
+    <div class="emaaree-meta-dashboard" role="region" aria-label="Student and term details">
+        <div class="emaaree-meta-strip">
+            <div class="emaaree-meta-left">
+                <span class="meta-k">Name:</span> <span class="meta-v">{{ strtoupper($sr->user->name) }}</span>
                 <span class="meta-sep">|</span>
-                <span class="meta-k">ID</span> {{ $sr->adm_no ?? '—' }}
+                <span class="meta-k">ID:</span> <span class="meta-v">{{ $sr->adm_no ?? '—' }}</span>
                 <span class="meta-sep">|</span>
-                <span class="meta-k">Class</span> {{ $classLabel ?: '—' }}
+                <span class="meta-k">Class:</span> <span class="meta-v">{{ $classLabel ?: '—' }}</span>
             </div>
-            <div class="meta-cell meta-inline">
-                <span class="meta-k">Year</span> {{ $year }}
+            <div class="emaaree-meta-right">
+                <span class="meta-k">Year:</span> <span class="meta-v">{{ $year }}</span>
                 <span class="meta-sep">|</span>
-                <span class="meta-k">Term</span> {{ $termLabel }}
+                <span class="meta-k">Term:</span> <span class="meta-v">{{ $termLabel }}</span>
                 <span class="meta-sep">|</span>
-                <span class="meta-k">Rank</span>
+                <span class="meta-k">Rank:</span>
                 <span class="emaaree-rank-final">{!! isset($exr->pos) && $exr->pos !== null ? Mk::getSuffix((int) $exr->pos) : '—' !!}</span>
             </div>
         </div>
@@ -80,10 +82,9 @@
         </div>
     </div>
 
-    <table class="emaaree-sig-footer" role="presentation">
+    <table class="emaaree-sig-footer" role="presentation" style="width:100%;">
         <tr>
-            <td style="width:55%;">&nbsp;</td>
-            <td style="text-align:right;padding-top:8px;">
+            <td style="text-align:right;vertical-align:bottom;padding-top:12px;">
                 <div class="emaaree-sig-line">Principal&rsquo;s signature</div>
             </td>
         </tr>

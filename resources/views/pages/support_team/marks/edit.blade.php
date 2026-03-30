@@ -1,6 +1,10 @@
 @php
     $slots = $mark_config->slotsForDisplay();
-    $active_slot = (int) ($mark_config->active_slot ?? 0);
+    $active_scheme_id = (int) ($active_scheme_id ?? \App\Helpers\Qs::getSetting('active_scheme_id'));
+    $current_scheme_id = (int) ($mark_config->mark_template_id ?? 0);
+    $scheme_is_active = isset($scheme_is_active) ? (bool) $scheme_is_active : ($active_scheme_id > 0 && $current_scheme_id === $active_scheme_id);
+    $active_assessment_title = trim((string) ($active_assessment_title ?? \App\Helpers\Qs::getSetting('active_assessment_title')));
+    $can_update_marks = $scheme_is_active && $active_assessment_title !== '';
 @endphp
 <style>
     .marks-entry-table { width: 100%; border-collapse: collapse; }
@@ -24,6 +28,7 @@
 
     .marks-entry-table .score-input { width: 60px; height: 35px; padding: 0 6px; text-align: center; font-weight: bold; border: 1px solid #ddd; border-radius: 2px; font-size: 0.9rem; box-sizing: border-box; display: block; margin: 0 auto; }
     .marks-entry-table .score-input:focus { outline: none; border-color: #D32F2F; box-shadow: 0 0 0 1px #D32F2F; }
+    .marks-entry-table .score-input[readonly] { background: #f3f4f6; color: #6b7280; cursor: not-allowed; }
 
     .marks-entry-table .total-cell { text-align: center; }
     .marks-entry-table .total-input {
@@ -48,7 +53,8 @@
             <th class="col-name">Name</th>
             <th class="col-adm">ADM_No</th>
             @foreach($slots as $slot)
-                <th class="col-ca export-col">
+                @php $isLocked = !$scheme_is_active || trim((string) ($slot['label'] ?? '')) !== $active_assessment_title; @endphp
+                <th class="col-ca export-col {{ $isLocked ? 'text-muted' : '' }}">
                     {{ $slot['label'] }} ({{ $slot['max'] }})
                 </th>
             @endforeach
@@ -62,6 +68,7 @@
                 <td class="col-name">{{ $mk->user->name }}</td>
                 <td class="col-adm">{{ $mk->user->student_record->adm_no ?? '—' }}</td>
                 @foreach($slots as $slot)
+                    @php $isLocked = !$scheme_is_active || trim((string) ($slot['label'] ?? '')) !== $active_assessment_title; @endphp
                     <td class="col-ca">
                         <input
                             title="{{ $slot['label'] }}"
@@ -71,6 +78,7 @@
                             name="{{ $slot['key'] }}_{{ $mk->id }}"
                             value="{{ $mk->{$slot['key']} }}"
                             type="number"
+                            {{ $isLocked ? 'readonly' : '' }}
                         >
                     </td>
                 @endforeach
@@ -88,6 +96,6 @@
         </tbody>
     </table>
     <div class="text-right mt-3">
-        <button type="submit" class="btn btn-primary" style="background-color: #D32F2F; border-color: #D32F2F; color: #fff;">Update Marks <i class="icon-paperplane ml-2" style="color: #fff;"></i></button>
+        <button type="submit" class="btn btn-primary" style="background-color: #D32F2F; border-color: #D32F2F; color: #fff;" {{ $can_update_marks ? '' : 'disabled' }}>Update Marks <i class="icon-paperplane ml-2" style="color: #fff;"></i></button>
     </div>
 </form>

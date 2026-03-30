@@ -16,7 +16,9 @@
         <div class="card-body">
             <ul class="nav nav-tabs nav-tabs-highlight">
                 <li class="nav-item"><a href="#all-grades" class="nav-link active" data-toggle="tab">Manage Grades</a></li>
+                @if(Qs::userIsTeamSA())
                 <li class="nav-item"><a href="#new-grade" class="nav-link" data-toggle="tab"><i class="icon-plus2"></i> Add Grade</a></li>
+                @endif
             </ul>
 
             <div class="tab-content">
@@ -51,7 +53,9 @@
                                 {{-- <th>Grade Type</th> --}}
                                 <th class="grade-col-left">Range</th>
                                 <th class="grade-col-left">Remark</th>
+                                @if(Qs::userIsTeamSA())
                                 <th class="no-export grade-col-action">Action</th>
+                                @endif
                             </tr>
                             </thead>
                             <tbody>
@@ -62,6 +66,7 @@
                                     {{-- <td>{{ $gr->class_type_id ? $class_types->where('id', $gr->class_type_id)->first()->name : '' }}</td> --}}
                                     <td class="grade-col-left">{{ $gr->mark_from.' - '.$gr->mark_to }}</td>
                                     <td class="grade-col-left">{{ $gr->remark }}</td>
+                                    @if(Qs::userIsTeamSA())
                                     <td class="grade-col-action">
                                         <div class="list-icons">
                                             <div class="dropdown">
@@ -70,26 +75,26 @@
                                                 </a>
 
                                                 <div class="dropdown-menu dropdown-menu-left">
-                                                    @if(Qs::userIsTeamSA())
                                                     {{--Edit--}}
                                                     <a href="{{ request()->root() . '/grades/' . $gr->id . '/edit' }}" class="dropdown-item"><i class="icon-pencil"></i> Edit</a>
-                                                   @endif
                                                     @if(Qs::userIsSuperAdmin())
                                                     {{--Delete (GET-based link with confirmation, like Levels)--}}
                                                     <a href="#" id="{{ $gr->id }}" onclick="confirmDelete(this.id); return false;" class="dropdown-item text-danger"><i class="icon-trash"></i> Delete</a>
                                                     <form method="get" id="item-delete-{{ $gr->id }}" action="{{ request()->root() . '/grades/' . $gr->id . '/delete' }}" class="hidden"></form>
-                                                        @endif
+                                                    @endif
 
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
+                                    @endif
                                 </tr>
                             @endforeach
                             </tbody>
                         </table>
                     </div>
 
+                @if(Qs::userIsTeamSA())
                 <div class="tab-pane fade" id="new-grade">
                     <div class="row">
                         <div class="col-md-6">
@@ -131,6 +136,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
         </div>
     </div>

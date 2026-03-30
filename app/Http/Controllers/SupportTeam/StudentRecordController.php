@@ -81,7 +81,14 @@ class StudentRecordController extends Controller
 
         // Smart Admission: resolve or create parent (avoid duplicate entry)
         $parentPhone = preg_replace('/\s+/', '', trim($req->parent_phone));
-        $parentUser = User::where('user_type', 'parent')->where('phone', $parentPhone)->first();
+        $parentEmail = trim((string) ($req->parent_email ?? ''));
+        $parentEmail = $parentEmail !== '' ? $parentEmail : null;
+
+        $parentUser = User::where('user_type', 'parent')
+            ->where(function ($q) use ($parentPhone) {
+                $q->where('phone', $parentPhone)->orWhere('username', $parentPhone);
+            })
+            ->first();
         if ($parentUser) {
             $sr['my_parent_id'] = $parentUser->id;
         } else {
@@ -90,16 +97,14 @@ class StudentRecordController extends Controller
             while (User::where('code', $code)->exists()) {
                 $code = 'PAR-' . time() . '-' . strtoupper(Str::random(6));
             }
-            $username = $code;
-            while (User::where('username', $username)->exists()) {
-                $username = 'PAR-' . time() . '-' . strtoupper(Str::random(6));
-            }
             $parentUser = $this->user->create([
                 'name' => ucwords($parentName),
+                'email' => $parentEmail,
                 'phone' => $parentPhone,
                 'user_type' => 'parent',
                 'code' => $code,
-                'username' => $username,
+                // CRITICAL: Parent login ID is their phone
+                'username' => $parentPhone,
                 'password' => Hash::make('123456'),
                 'photo' => Qs::getDefaultUserImage(),
             ]);
@@ -147,6 +152,20 @@ class StudentRecordController extends Controller
         $data['sections'] = $this->my_class->getClassSections($class_id);
 
         return is_null($mc) ? Qs::goWithDanger() : view('pages.support_team.students.list', $data);
+    }
+
+    /**
+     * Student self-service record page (no hashed student record ID needed).
+     */
+    public function my_record()
+    {
+        $userId = (int) Auth::id();
+        $sr = $this->student->getRecord(['user_id' => $userId])->with('my_parent')->first();
+        if (!$sr) {
+            return redirect(route('dashboard'))->with('flash_danger', __('msg.srnf'));
+        }
+
+        return view('pages.support_team.students.show', ['sr' => $sr]);
     }
 
     public function graduated()
@@ -229,7 +248,14 @@ class StudentRecordController extends Controller
 
         // Smart Parent: resolve or create parent from name/phone (same as Add)
         $parentPhone = preg_replace('/\s+/', '', trim($req->parent_phone));
-        $parentUser = User::where('user_type', 'parent')->where('phone', $parentPhone)->first();
+        $parentEmail = trim((string) ($req->parent_email ?? ''));
+        $parentEmail = $parentEmail !== '' ? $parentEmail : null;
+
+        $parentUser = User::where('user_type', 'parent')
+            ->where(function ($q) use ($parentPhone) {
+                $q->where('phone', $parentPhone)->orWhere('username', $parentPhone);
+            })
+            ->first();
         if ($parentUser) {
             $srec['my_parent_id'] = $parentUser->id;
         } else {
@@ -238,16 +264,14 @@ class StudentRecordController extends Controller
             while (User::where('code', $code)->exists()) {
                 $code = 'PAR-' . time() . '-' . strtoupper(Str::random(6));
             }
-            $username = $code;
-            while (User::where('username', $username)->exists()) {
-                $username = 'PAR-' . time() . '-' . strtoupper(Str::random(6));
-            }
             $parentUser = $this->user->create([
                 'name' => ucwords($parentName),
+                'email' => $parentEmail,
                 'phone' => $parentPhone,
                 'user_type' => 'parent',
                 'code' => $code,
-                'username' => $username,
+                // CRITICAL: Parent login ID is their phone
+                'username' => $parentPhone,
                 'password' => Hash::make('123456'),
                 'photo' => Qs::getDefaultUserImage(),
             ]);

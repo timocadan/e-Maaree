@@ -5,5 +5,5 @@
 
 {{--Marksheet--}}
 <li class="nav-item">
-    <a href="{{ route('marks.year_select', Qs::hash(Auth::user()->id)) }}" class="nav-link {{ in_array(Route::currentRouteName(), ['marks.show', 'marks.year_selector', 'pins.enter']) ? 'active' : '' }}"><i class="icon-book"></i> <span>Marksheet</span></a>
+    <a href="{{ route('marks.year_selector') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['marks.show', 'marks.year_selector']) ? 'active' : '' }}"><i class="icon-book"></i> <span>Marksheet</span></a>
 </li>

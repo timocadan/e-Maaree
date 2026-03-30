@@ -21,19 +21,6 @@
                         </div>
 
                         <div class="form-group row">
-                            <label for="teacher_id" class="col-lg-3 col-form-label font-weight-semibold">Form Master (Class Master)</label>
-                            <div class="col-lg-9">
-                                <select data-placeholder="Select Form Master" class="form-control select-search" name="teacher_id" id="teacher_id">
-                                    <option value="">— None —</option>
-                                    @foreach($teachers ?? [] as $t)
-                                        <option {{ ($c->teacher_id ?? null) == $t->id ? 'selected' : '' }} value="{{ $t->id }}">{{ $t->name }}</option>
-                                    @endforeach
-                                </select>
-                                <span class="form-text text-muted">Class Master can view aggregated totals and generate class ranks.</span>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
                             <label for="class_type_id" class="col-lg-3 col-form-label font-weight-semibold">Class Type</label>
                             <div class="col-lg-9">
                                 <input class="form-control" disabled="disabled" value="{{ $c->class_type->name }}" title="Class Type" type="text">

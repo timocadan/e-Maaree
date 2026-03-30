@@ -77,7 +77,7 @@
                                 </div>
 
                                 <div class="form-group row">
-                                    <label for="teacher_id" class="col-lg-3 col-form-label font-weight-semibold">Teacher</label>
+                                    <label for="teacher_id" class="col-lg-3 col-form-label font-weight-semibold">Form Master (Class Teacher)</label>
                                     <div class="col-lg-9">
                                         <select data-placeholder="Select Teacher" class="form-control select-search" name="teacher_id" id="teacher_id">
                                             <option value=""></option>
@@ -85,6 +85,7 @@
                                                 <option {{ old('teacher_id') == Qs::hash($t->id) ? 'selected' : '' }} value="{{ Qs::hash($t->id) }}">{{ $t->name }}</option>
                                             @endforeach
                                         </select>
+                                        <small class="form-text text-muted">This teacher will have authority over this specific section's marks and attendance.</small>
                                     </div>
                                 </div>
 
@@ -130,12 +131,12 @@
                                                 <div class="dropdown-menu dropdown-menu-left">
                                                     {{--edit--}}
                                                     @if(Qs::userIsTeamSA())
-                                                        <a href="{{ route('sections.edit', $s->id) }}" class="dropdown-item"><i class="icon-pencil"></i> Edit</a>
+                                                        <a href="{{ request()->root() . '/sections/' . $s->id . '/edit' }}" class="dropdown-item"><i class="icon-pencil"></i> Edit</a>
                                                     @endif
                                                     {{--Delete--}}
                                                     @if(Qs::userIsSuperAdmin())
                                                         <a id="{{ $s->id }}" onclick="confirmDelete(this.id)" href="#" class="dropdown-item"><i class="icon-trash"></i> Delete</a>
-                                                        <form method="post" id="item-delete-{{ $s->id }}" action="{{ route('sections.destroy', $s->id) }}" class="hidden">@csrf @method('delete')</form>
+                                                        <form method="post" id="item-delete-{{ $s->id }}" action="{{ request()->root() . '/sections/' . $s->id }}" class="hidden">@csrf @method('delete')</form>
                                                     @endif
 
                                                 </div>

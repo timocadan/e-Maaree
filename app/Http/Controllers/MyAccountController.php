@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 
-use App\Helpers\Qs;
 use App\Http\Requests\UserChangePass;
 use App\Http\Requests\UserUpdate;
 use App\Repositories\UserRepo;
@@ -33,17 +32,6 @@ class MyAccountController extends Controller
 
         if(!$user->username && !$req->username && !$req->email){
             return back()->with('pop_error', __('msg.user_invalid'));
-        }
-
-        $user_type = $user->user_type;
-        $code = $user->code;
-
-        if($req->hasFile('photo')) {
-            $photo = $req->file('photo');
-            $f = Qs::getFileMetaData($photo);
-            $f['name'] = 'photo.' . $f['ext'];
-            $f['path'] = $photo->storeAs(Qs::getUploadPath($user_type).$code, $f['name']);
-            $d['photo'] = asset('storage/' . $f['path']);
         }
 
         $this->user->update($user->id, $d);

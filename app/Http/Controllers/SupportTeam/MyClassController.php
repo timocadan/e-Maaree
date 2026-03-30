@@ -63,17 +63,13 @@ class MyClassController extends Controller
     public function edit($class_id)
     {
         $d['c'] = MyClass::findOrFail($class_id);
-        $d['teachers'] = $this->user->getUserByType('teacher');
         return view('pages.support_team.classes.edit', $d);
     }
 
     public function update(ClassUpdate $req, $class_id)
     {
         MyClass::findOrFail($class_id);
-        $data = $req->only(['name', 'teacher_id']);
-        if (isset($data['teacher_id']) && $data['teacher_id'] === '') {
-            $data['teacher_id'] = null;
-        }
+        $data = $req->only(['name']);
         $this->my_class->update($class_id, $data);
         return Qs::jsonUpdateOk();
     }

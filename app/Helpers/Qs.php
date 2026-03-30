@@ -291,6 +291,7 @@ class Qs
             'current_session' => $y . '-' . ($y + 1),
             'system_name' => 'e-maaree',
             'system_title' => 'e-maaree',
+            'weekend_type' => 'sat_sun',
         ];
         return $defaults[$type] ?? '';
     }

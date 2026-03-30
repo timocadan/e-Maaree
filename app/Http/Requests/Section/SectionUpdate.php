@@ -29,7 +29,7 @@ class SectionUpdate extends FormRequest
     public function attributes()
     {
         return  [
-            'teacher_id' => 'Teacher',
+            'teacher_id' => 'Form Master (Class Teacher)',
         ];
     }
 

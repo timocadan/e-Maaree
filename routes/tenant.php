@@ -54,6 +54,7 @@ Route::middleware([
                 Route::get('graduated', 'StudentRecordController@graduated')->name('students.graduated');
                 Route::put('not_graduated/{id}', 'StudentRecordController@not_graduated')->name('st.not_graduated');
                 Route::get('list/{class_id}', 'StudentRecordController@listByClass')->name('students.list')->middleware('teamSAT');
+                Route::get('my_record', 'StudentRecordController@my_record')->name('students.my_record')->middleware('student');
 
                 /* Promotions */
                 Route::post('promote_selector', 'PromotionController@selector')->name('students.promote_selector');
@@ -68,43 +69,8 @@ Route::middleware([
             /*************** Users *****************/
             Route::group(['prefix' => 'users'], function () {
                 Route::get('reset_pass/{id}', 'UserController@reset_pass')->name('users.reset_pass');
-            });
-
-            /*************** TimeTables *****************/
-            Route::group(['prefix' => 'timetables'], function () {
-                Route::get('/', 'TimeTableController@index')->name('tt.index');
-
-                Route::group(['middleware' => 'teamSA'], function () {
-                    Route::post('/', 'TimeTableController@store')->name('tt.store');
-                    Route::put('/{tt}', 'TimeTableController@update')->name('tt.update');
-                    Route::delete('/{tt}', 'TimeTableController@delete')->name('tt.delete');
-                });
-
-                /*************** TimeTable Records *****************/
-                Route::group(['prefix' => 'records'], function () {
-
-                    Route::group(['middleware' => 'teamSA'], function () {
-                        Route::get('manage/{ttr}', 'TimeTableController@manage')->name('ttr.manage');
-                        Route::post('/', 'TimeTableController@store_record')->name('ttr.store');
-                        Route::get('edit/{ttr}', 'TimeTableController@edit_record')->name('ttr.edit');
-                        Route::put('/{ttr}', 'TimeTableController@update_record')->name('ttr.update');
-                    });
-
-                    Route::get('show/{ttr}', 'TimeTableController@show_record')->name('ttr.show');
-                    Route::get('print/{ttr}', 'TimeTableController@print_record')->name('ttr.print');
-                    Route::delete('/{ttr}', 'TimeTableController@delete_record')->name('ttr.destroy');
-
-                });
-
-                /*************** Time Slots *****************/
-                Route::group(['prefix' => 'time_slots', 'middleware' => 'teamSA'], function () {
-                    Route::post('/', 'TimeTableController@store_time_slot')->name('ts.store');
-                    Route::post('/use/{ttr}', 'TimeTableController@use_time_slot')->name('ts.use');
-                    Route::get('edit/{ts}', 'TimeTableController@edit_time_slot')->name('ts.edit');
-                    Route::delete('/{ts}', 'TimeTableController@delete_time_slot')->name('ts.destroy');
-                    Route::put('/{ts}', 'TimeTableController@update_time_slot')->name('ts.update');
-                });
-
+                Route::get('parents', 'UserController@parents')->name('users.parents');
+                Route::post('parents/reset_pass/{id}', 'UserController@reset_parent_pass')->name('users.parents.reset_pass');
             });
 
             /*************** Payments *****************/
@@ -139,8 +105,9 @@ Route::middleware([
                     Route::put('batch_update', 'MarkController@batch_update')->name('marks.batch_update');
                     Route::get('tabulation/{term?}/{class?}/{sec_id?}', 'MarkController@tabulation')->name('marks.tabulation');
                     Route::post('tabulation', 'MarkController@tabulation_select')->name('marks.tabulation_select');
-                    Route::get('tabulation/print/{term}/{class}/{sec_id}', 'MarkController@print_tabulation')->name('marks.print_tabulation');
+                    Route::post('tabulation/publish', 'MarkController@tabulation_publish')->name('marks.tabulation_publish');
                 });
+                Route::get('tabulation/print/{term}/{class}/{sec_id}', 'MarkController@print_tabulation')->name('marks.print_tabulation');
 
                 // FOR teamSAT
                 Route::group(['middleware' => 'teamSAT'], function () {
@@ -150,16 +117,26 @@ Route::middleware([
                     Route::post('selector', 'MarkController@selector')->name('marks.selector');
                 });
 
-                Route::get('select_year/{id}', 'MarkController@year_selector')->name('marks.year_selector');
-                Route::post('select_year/{id}', 'MarkController@year_selected')->name('marks.year_select');
+                Route::get('select_year/{id?}', 'MarkController@year_selector')->name('marks.year_selector');
+                Route::post('select_year/{id?}', 'MarkController@year_selected')->name('marks.year_select');
                 Route::get('show/{id}/{year}', 'MarkController@show')->name('marks.show');
                 Route::get('print/{id}/annual/{year}', 'MarkController@print_annual_student')->name('marks.print_annual');
                 Route::get('print/{id}/{term}/{year}', 'MarkController@print_view')->name('marks.print');
 
             });
 
+            /*************** Attendance *****************/
+            Route::group(['prefix' => 'attendance', 'middleware' => 'teamSAT'], function () {
+                Route::get('/', 'AttendanceController@index')->name('attendance.index');
+                Route::get('/grid', 'AttendanceController@showMarkingGrid')->name('attendance.show_marking_grid');
+                Route::post('/', 'AttendanceController@store')->name('attendance.store');
+                Route::get('/report', 'AttendanceController@report')->name('attendance.report')->middleware('teamSA');
+                Route::post('/report', 'AttendanceController@showReport')->name('attendance.report_show')->middleware('teamSA');
+            });
+
             Route::get('class_master', 'ClassMasterController@index')->name('class_master.dashboard');
             Route::post('class_master/generate_ranks', 'ClassMasterController@generateRanks')->name('class_master.generate_ranks');
+            Route::get('class_master/print_finalized/{class_id}/{section_id}', 'ClassMasterController@printFinalizedRoster')->name('class_master.print_finalized');
             Route::get('students/search-parents', 'StudentRecordController@searchParents')->name('students.search_parents')->middleware('teamSA');
             Route::resource('students', 'StudentRecordController');
             Route::resource('users', 'UserController');
@@ -169,7 +146,11 @@ Route::middleware([
             Route::get('classes/{class_id}/edit', 'MyClassController@edit')->name('classes.edit');
             Route::put('classes/{class_id}', 'MyClassController@update')->name('classes.update');
             Route::delete('classes/{class_id}', 'MyClassController@destroy')->name('classes.destroy');
-            Route::resource('sections', 'SectionController');
+            Route::get('sections', 'SectionController@index')->name('sections.index');
+            Route::post('sections', 'SectionController@store')->name('sections.store');
+            Route::get('sections/{section_id}/edit', 'SectionController@edit')->name('sections.edit');
+            Route::put('sections/{section_id}', 'SectionController@update')->name('sections.update');
+            Route::delete('sections/{section_id}', 'SectionController@destroy')->name('sections.destroy');
             Route::resource('subjects', 'SubjectController');
             Route::get('grades', 'GradeController@index')->name('grades.index');
             Route::get('grades/create', 'GradeController@create')->name('grades.create');

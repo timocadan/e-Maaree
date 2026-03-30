@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Models\User;
+use App\Models\StudentRecord;
 
 
 class UserController extends Controller
@@ -21,7 +23,7 @@ class UserController extends Controller
     public function __construct(UserRepo $user, LocationRepo $loc, MyClassRepo $my_class)
     {
         $this->middleware('teamSA', ['only' => ['index', 'store', 'edit', 'update'] ]);
-        $this->middleware('super_admin', ['only' => ['reset_pass','destroy'] ]);
+        $this->middleware('super_admin', ['only' => ['reset_pass','destroy', 'parents', 'reset_parent_pass'] ]);
 
         $this->user = $user;
         $this->loc = $loc;
@@ -69,6 +71,58 @@ class UserController extends Controller
         $data['password'] = Hash::make('user');
         $this->user->update($id, $data);
         return back()->with('flash_success', __('msg.pu_reset'));
+    }
+
+    public function parents()
+    {
+        $parents = User::where('user_type', 'parent')
+            ->orderBy('name')
+            ->get(['id', 'name', 'username', 'phone']);
+
+        $parentIds = $parents->pluck('id')->all();
+        $childrenByParent = [];
+
+        if (!empty($parentIds)) {
+            $childrenByParent = StudentRecord::with('user:id,name')
+                ->whereIn('my_parent_id', $parentIds)
+                ->get()
+                ->groupBy('my_parent_id')
+                ->map(function ($recs) {
+                    return $recs
+                        ->map(function ($r) {
+                            return $r->user ? $r->user->name : null;
+                        })
+                        ->filter()
+                        ->values()
+                        ->all();
+                })
+                ->all();
+        }
+
+        return view('pages.support_team.users.parents', [
+            'parents' => $parents,
+            'childrenByParent' => $childrenByParent,
+        ]);
+    }
+
+    public function reset_parent_pass($id)
+    {
+        $id = Qs::decodeHash($id);
+        if ($id === null) {
+            abort(404);
+        }
+
+        $parent = User::findOrFail($id);
+        if ($parent->user_type !== 'parent') {
+            return back()->with('flash_danger', __('msg.denied'));
+        }
+
+        if (Qs::headSA($id)) {
+            return back()->with('flash_danger', __('msg.denied'));
+        }
+
+        $this->user->update($id, ['password' => Hash::make('123456')]);
+        return back()->with('flash_success', 'Parent password reset to default (123456).');
     }
 
     public function store(UserRequest $req)

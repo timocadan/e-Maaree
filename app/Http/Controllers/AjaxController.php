@@ -94,6 +94,9 @@ class AjaxController extends Controller
     public function get_class_sections($class_id)
     {
         $sections = $this->my_class->getClassSections($class_id);
+        if (Qs::userIsTeacher()) {
+            $sections = $sections->where('teacher_id', Auth::id())->values();
+        }
         return $sections = $sections->map(function($q){
             return ['id' => $q->id, 'name' => $q->name];
         })->all();
@@ -102,6 +105,9 @@ class AjaxController extends Controller
     public function get_class_subjects($class_id)
     {
         $sections = $this->my_class->getClassSections($class_id);
+        if (Qs::userIsTeacher()) {
+            $sections = $sections->where('teacher_id', Auth::id())->values();
+        }
         $subjects = $this->my_class->findSubjectByClass($class_id);
 
         if(Qs::userIsTeacher()){

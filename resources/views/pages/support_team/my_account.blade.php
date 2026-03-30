@@ -55,7 +55,7 @@
                     <div class="tab-pane fade" id="edit-profile">
                         <div class="row">
                             <div class="col-md-6">
-                                <form enctype="multipart/form-data" method="post" action="{{ route('my_account.update') }}">
+                                <form method="post" action="{{ route('my_account.update') }}">
                                     @csrf @method('put')
 
                                     <div class="form-group row">
@@ -98,23 +98,9 @@
                                     </div>
 
                                     <div class="form-group row">
-                                        <label for="phone2" class="col-lg-3 col-form-label font-weight-semibold">Telephone </label>
-                                        <div class="col-lg-9">
-                                            <input id="phone2" value="{{ $my->phone2 }}" name="phone2"  type="text" class="form-control" >
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group row">
                                         <label for="address" class="col-lg-3 col-form-label font-weight-semibold">Address </label>
                                         <div class="col-lg-9">
                                             <input id="address" value="{{ $my->address }}" name="address"  type="text"  class="form-control" >
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group row">
-                                        <label for="address" class="col-lg-3 col-form-label font-weight-semibold">Change Photo </label>
-                                        <div class="col-lg-9">
-                                            <input  accept="image/*" type="file" name="photo" class="form-input-styled" data-fouc>
                                         </div>
                                     </div>
 

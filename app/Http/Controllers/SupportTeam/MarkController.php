@@ -16,8 +16,10 @@ use App\Models\MarkConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Session;
 use App\Models\MyClass;
+use App\Models\Mark;
+use App\Models\Section;
+use App\Models\MarkTemplate;
 
 class MarkController extends Controller
 {
@@ -36,32 +38,93 @@ class MarkController extends Controller
        // $this->middleware('teamSAT', ['except' => ['show', 'year_selected', 'year_selector', 'print_view'] ]);
     }
 
+    protected function normalizeMarkValue($value): ?int
+    {
+        return ($value === '' || $value === null) ? null : (int) $value;
+    }
+
+    protected function resolveActiveSchemeId(?MarkConfig $config = null): int
+    {
+        $storedSchemeId = (int) Qs::getSetting('active_scheme_id');
+        if ($storedSchemeId > 0) {
+            return $storedSchemeId;
+        }
+
+        if ($config && (int) $config->mark_template_id > 0) {
+            return (int) $config->mark_template_id;
+        }
+
+        $firstConfig = MarkConfig::whereNotNull('mark_template_id')->orderBy('id')->first();
+        return $firstConfig ? (int) $firstConfig->mark_template_id : 0;
+    }
+
+    protected function resolveActiveAssessmentTitle(?MarkConfig $config, array $slots = []): string
+    {
+        $storedTitle = trim((string) Qs::getSetting('active_assessment_title'));
+        if ($storedTitle !== '') {
+            return $storedTitle;
+        }
+
+        if (!$config) {
+            return '';
+        }
+
+        if (empty($slots)) {
+            $slots = $config->slotsForDisplay();
+        }
+
+        $legacyIndex = (int) ($config->active_slot ?? 0);
+        foreach ($slots as $slot) {
+            if ((int) ($slot['slot_index'] ?? -1) === $legacyIndex) {
+                return trim((string) ($slot['label'] ?? ''));
+            }
+        }
+
+        return isset($slots[0]) ? trim((string) ($slots[0]['label'] ?? '')) : '';
+    }
+
+    protected function editableSlotKeys(array $slots, string $activeAssessmentTitle): array
+    {
+        $activeAssessmentTitle = trim($activeAssessmentTitle);
+        if ($activeAssessmentTitle === '') {
+            return [];
+        }
+
+        return collect($slots)
+            ->filter(function (array $slot) use ($activeAssessmentTitle) {
+                return trim((string) ($slot['label'] ?? '')) === $activeAssessmentTitle;
+            })
+            ->pluck('key')
+            ->values()
+            ->all();
+    }
+
     public function index()
     {
         $d['terms'] = [1 => __('Term 1'), 2 => __('Term 2')];
         $d['my_classes'] = $this->my_class->all();
         $d['sections'] = $this->my_class->getAllSections();
         $d['subjects'] = $this->my_class->getAllSubjects();
+        if (Qs::userIsTeacher()) {
+            $teacherId = (int) Auth::id();
+            $d['sections'] = $d['sections']->where('teacher_id', $teacherId)->values();
+            $d['my_classes'] = $d['my_classes']->whereIn('id', $d['sections']->pluck('my_class_id')->unique()->values())->values();
+            $d['subjects'] = $this->my_class->findSubjectByTeacher($teacherId);
+        }
         $d['selected'] = false;
 
         return view('pages.support_team.marks.index', $d);
     }
 
-    public function year_selector($student_id)
+    public function year_selector($student_id = null)
     {
-        $student_id = Qs::decodeHash($student_id);
-        if ($student_id === null) {
-            abort(404);
-        }
+        $student_id = $this->resolveRequestedStudentId($student_id);
         return $this->verifyStudentExamYear($student_id);
     }
 
-    public function year_selected(Request $req, $student_id)
+    public function year_selected(Request $req, $student_id = null)
     {
-        $student_id = Qs::decodeHash($student_id);
-        if ($student_id === null) {
-            abort(404);
-        }
+        $student_id = $this->resolveRequestedStudentId($student_id);
         if(!$this->verifyStudentExamYear($student_id, $req->year)){
             return $this->noStudentRecord();
         }
@@ -70,23 +133,15 @@ class MarkController extends Controller
         return redirect()->route('marks.show', [$student_id, $req->year]);
     }
 
-    public function show($student_id, $year)
+    public function show($student_id = null, $year = null)
     {
-        $student_id = Qs::decodeHash($student_id);
-        if ($student_id === null) {
+        $student_id = $this->resolveRequestedStudentId($student_id);
+        if ($year === null || trim((string) $year) === '') {
             abort(404);
         }
         /* Prevent Other Students/Parents from viewing Result of others */
         if(Auth::user()->id != $student_id && !Qs::userIsTeamSAT() && !Qs::userIsMyChild($student_id, Auth::user()->id)){
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
-        }
-
-        if(Mk::examIsLocked() && !Qs::userIsTeamSA()){
-            Session::put('marks_url', route('marks.show', [Qs::hash($student_id), $year]));
-
-            if(!$this->checkPinVerified($student_id)){
-                return redirect()->route('pins.enter', Qs::hash($student_id));
-            }
         }
 
         if(!$this->verifyStudentExamYear($student_id, $year)){
@@ -95,6 +150,9 @@ class MarkController extends Controller
 
         $wh = ['student_id' => $student_id, 'year' => $year];
         $d['marks'] = $this->exam->getMark($wh);
+        if (method_exists($d['marks'], 'load')) {
+            $d['marks']->load('grade');
+        }
         $d['exam_records'] = $exr = $this->exam->getRecord($wh);
         $d['terms'] = [1 => __('Term 1'), 2 => __('Term 2')];
         $d['sr'] = $this->student->getRecord(['user_id' => $student_id])->first();
@@ -103,6 +161,52 @@ class MarkController extends Controller
         $d['subjects'] = $this->my_class->findSubjectByClass($mc->id);
         $d['year'] = $year;
         $d['student_id'] = $student_id;
+
+        // Re-evaluate grades dynamically against the CURRENT grade scheme for this level.
+        // Also self-heal old rows: if grade is null/"N/A", sync the stored grade_id.
+        $classTypeId = (int) ($d['class_type']->id ?? 0);
+        $computedGradesByMarkId = [];
+        if ($classTypeId > 0) {
+            foreach ($d['marks'] as $mk) {
+                $termNum = (int) ($mk->term ?? 0);
+                $texField = 'tex' . $termNum;
+                $score = isset($mk->$texField) && is_numeric($mk->$texField) ? (float) $mk->$texField : null;
+
+                $computedGrade = $score !== null ? $this->mark->getGrade($score, $classTypeId) : null;
+                $computedGradesByMarkId[$mk->id] = $computedGrade ? $computedGrade->name : 'N/A';
+
+                $storedIsMissingOrNA = !$mk->grade || strtoupper(trim((string) optional($mk->grade)->name)) === 'N/A';
+                if ($storedIsMissingOrNA && $computedGrade && (int) ($mk->grade_id ?? 0) !== (int) $computedGrade->id) {
+                    $this->exam->updateMark($mk->id, ['grade_id' => $computedGrade->id]);
+                    $mk->grade_id = $computedGrade->id;
+                    $mk->setRelation('grade', $computedGrade);
+                }
+            }
+        }
+        $d['computed_grade_by_mark_id'] = $computedGradesByMarkId;
+
+        // Blueprint-driven assessment titles (slots) + term grades for Masterpiece web marksheet.
+        $slotMap = [];
+        $termGradeMap = [];
+        foreach ([1, 2] as $t) {
+            $cfg = $classTypeId > 0
+                ? MarkConfig::with('template')
+                    ->where('class_type_id', $classTypeId)
+                    ->where('term_id', (int) $t)
+                    ->where('school_year', $year)
+                    ->first()
+                : null;
+
+            $slotMap[$t] = ($cfg && $cfg->template)
+                ? $cfg->slotsForDisplay()
+                : (new MarkTemplate())->slotsForDisplay();
+
+            $termExr = $exr->firstWhere('term', (int) $t);
+            $avg = $termExr && isset($termExr->ave) && is_numeric($termExr->ave) ? (float) $termExr->ave : null;
+            $termGradeMap[$t] = ($avg !== null && $classTypeId > 0) ? $this->mark->getGrade($avg, $classTypeId) : null;
+        }
+        $d['mark_slots_by_term'] = $slotMap;
+        $d['term_grade_by_term'] = $termGradeMap;
         //$d['ct'] = $d['class_type']->code;
         //$d['mark_type'] = Qs::getMarkType($d['ct']);
 
@@ -115,17 +219,10 @@ class MarkController extends Controller
         if ($student_id === null) {
             abort(404);
         }
+        $sr = $this->student->getRecord(['user_id' => $student_id])->first();
         /* Prevent Other Students/Parents from viewing Result of others */
-        if(Auth::user()->id != $student_id && !Qs::userIsTeamSA() && !Qs::userIsMyChild($student_id, Auth::user()->id)){
+        if(Auth::user()->id != $student_id && !Qs::userIsTeamSA() && !Qs::userIsMyChild($student_id, Auth::user()->id) && (!$sr || !$this->teacherCanAccessSection((int) $sr->section_id, (int) $sr->my_class_id))){
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
-        }
-
-        if(Mk::examIsLocked() && !Qs::userIsTeamSA()){
-            Session::put('marks_url', route('marks.show', [Qs::hash($student_id), $year]));
-
-            if(!$this->checkPinVerified($student_id)){
-                return redirect()->route('pins.enter', Qs::hash($student_id));
-            }
         }
 
         if(!$this->verifyStudentExamYear($student_id, $year)){
@@ -173,6 +270,8 @@ class MarkController extends Controller
             )
             : null;
 
+        $d['draft_watermark'] = ! $this->isTabulationPublished($year, (int) $mc->id, (int) $exr->section_id);
+
         return view('pages.support_team.marks.print.marksheet', $d);
     }
 
@@ -186,16 +285,9 @@ class MarkController extends Controller
             abort(404);
         }
 
-        if (Auth::user()->id != $student_id && ! Qs::userIsTeamSA() && ! Qs::userIsMyChild($student_id, Auth::user()->id)) {
+        $sr = $this->student->getRecord(['user_id' => $student_id])->first();
+        if (Auth::user()->id != $student_id && ! Qs::userIsTeamSA() && ! Qs::userIsMyChild($student_id, Auth::user()->id) && (!$sr || !$this->teacherCanAccessSection((int) $sr->section_id, (int) $sr->my_class_id))) {
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
-        }
-
-        if (Mk::examIsLocked() && ! Qs::userIsTeamSA()) {
-            Session::put('marks_url', route('marks.show', [Qs::hash($student_id), $year]));
-
-            if (! $this->checkPinVerified($student_id)) {
-                return redirect()->route('pins.enter', Qs::hash($student_id));
-            }
         }
 
         if (! $this->verifyStudentExamYear($student_id, $year)) {
@@ -240,84 +332,78 @@ class MarkController extends Controller
                 : collect();
         }
 
-        $subjectRankBySubId = [];
-        if ($built !== null) {
-            $stIds = $built['st_ids'];
-            foreach ($subjects as $sub) {
-                $sid = $sub->id;
-                $allRanks = $this->denseRanksDescending($stIds, function ($stId) use ($sid, $marks_term1, $marks_term2) {
-                    $a = $marks_term1[$stId][$sid] ?? null;
-                    $b = $marks_term2[$stId][$sid] ?? null;
-                    if ($a !== null && $b !== null) {
-                        return (float) $a + (float) $b;
-                    }
-                    if ($a !== null) {
-                        return (float) $a;
-                    }
-                    if ($b !== null) {
-                        return (float) $b;
-                    }
-
-                    return null;
-                });
-                $subjectRankBySubId[$sid] = $allRanks[$student_id] ?? null;
-            }
-        }
-
-        $subject_rows = [];
+        // Single-student roster matrix (same payload shape as tabulation/annual_print roster rows).
+        $roster_row = [
+            'name' => $sr->user->name,
+            'sex' => $this->rosterSexShort($sr->user),
+            'adm_no' => ($sr->adm_no !== null && $sr->adm_no !== '') ? (string) $sr->adm_no : '-',
+            'sem1' => [],
+            'sem2' => [],
+            'avg' => [],
+            'term1_total' => $my['term1_total'] ?? null,
+            'term2_total' => $my['term2_total'] ?? null,
+            'term1_avg' => $my['term1_avg'] ?? null,
+            'term2_avg' => $my['term2_avg'] ?? null,
+            'annual_avg' => $my['annual_avg'] ?? null,
+            'rank_term1' => $my['rank_term1'] ?? null,
+            'rank_term2' => $my['rank_term2'] ?? null,
+            'rank' => $my['rank'] ?? null,
+        ];
         foreach ($subjects as $sub) {
             $sid = $sub->id;
             $t1 = $marks_term1[$student_id][$sid] ?? null;
             $t2 = $marks_term2[$student_id][$sid] ?? null;
-            $avg = ($t1 !== null && $t2 !== null) ? round(((float) $t1 + (float) $t2) / 2, 1) : null;
-            $total = null;
-            if ($t1 !== null && $t2 !== null) {
-                $total = round((float) $t1 + (float) $t2, 1);
-            } elseif ($t1 !== null) {
-                $total = round((float) $t1, 1);
-            } elseif ($t2 !== null) {
-                $total = round((float) $t2, 1);
-            }
-            $subject_rows[] = [
-                'subject' => $sub,
-                't1' => $t1,
-                't2' => $t2,
-                'total' => $total,
-                'avg' => $avg,
-                'sub_rank' => $subjectRankBySubId[$sid] ?? null,
-            ];
+            $a = ($t1 !== null && $t2 !== null) ? round(((float) $t1 + (float) $t2) / 2, 1) : null;
+            $roster_row['sem1'][$sid] = $t1;
+            $roster_row['sem2'][$sid] = $t2;
+            $roster_row['avg'][$sid] = $a;
         }
 
         $class_type = $this->my_class->findTypeByClass($class_id);
-        $ctId = (int) ($class_type->id ?? 0);
 
         $d['sr'] = $sr;
         $d['my_class'] = $this->my_class->find($class_id);
+        if ($d['my_class']) {
+            $d['my_class']->loadMissing('teacher');
+        }
         $d['class_type'] = $class_type;
         $d['year'] = $year;
         $d['student_id'] = $student_id;
-        $d['subject_rows'] = $subject_rows;
-        $d['summary'] = $my;
-        $d['cum_total'] = ($my['term1_total'] !== null || $my['term2_total'] !== null)
-            ? ((int) ($my['term1_total'] ?? 0) + (int) ($my['term2_total'] ?? 0))
-            : null;
-
-        $d['annual_grade'] = $ctId > 0
-            ? $this->resolveGradeForSubjectAverage(
-                isset($my['annual_avg']) && is_numeric($my['annual_avg']) ? (float) $my['annual_avg'] : null,
-                $ctId
-            )
-            : null;
+        $d['subjects'] = $subjects;
+        $d['roster_row'] = $roster_row;
+        $d['section'] = $this->my_class->findSection($section_id);
 
         $d['s'] = Setting::all()->flatMap(function ($s) {
             return [$s->type => $s->description];
         });
 
-        return view('pages.support_team.marks.print.annual_student', $d);
+        $d['draft_watermark'] = ! $this->isTabulationPublished($year, $class_id, $section_id);
+
+        return view('pages.support_team.marks.print.annual', $d);
+    }
+
+    public function tabulation_publish(Request $request)
+    {
+        if (! Qs::userIsTeamSA()) {
+            return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
+        }
+
+        $year = $this->resolveActiveYear();
+        $class_id = (int) $request->input('my_class_id');
+        $section_id = (int) $request->input('section_id');
+        $on = $request->boolean('finalize_publish');
+        $this->setTabulationPublished($year, $class_id, $section_id, $on);
+
+        return redirect()->route('marks.tabulation', ['term' => 'annual', 'class' => $class_id, 'sec_id' => $section_id])
+            ->with('flash_success', $on ? __('Results published for printing.') : __('Publish cleared; prints show as draft.'));
     }
 
     public function selector(MarkSelector $req)
     {
+        if (! $this->teacherCanAccessSection((int) $req->section_id, (int) $req->my_class_id)) {
+            return redirect()->route('marks.index')->with('pop_error', __('msg.denied'));
+        }
+
         // Resolve the active academic session/year once per request.
         $year = $this->resolveActiveYear();
 
@@ -346,6 +432,10 @@ class MarkController extends Controller
 
     public function manage($term, $class_id, $section_id, $subject_id)
     {
+        if (! $this->teacherCanAccessSection((int) $section_id, (int) $class_id)) {
+            return redirect()->route('marks.index')->with('pop_error', __('msg.denied'));
+        }
+
         // Resolve and strictly enforce a non-null academic session/year.
         $year = $this->resolveActiveYear();
         $d = ['term' => $term, 'my_class_id' => $class_id, 'section_id' => $section_id, 'subject_id' => $subject_id, 'year' => $year];
@@ -429,11 +519,19 @@ class MarkController extends Controller
             return view('pages.support_team.marks.manage', $d);
         }
 
+        $d['active_scheme_id'] = $this->resolveActiveSchemeId($d['mark_config']);
+        $d['active_assessment_title'] = $this->resolveActiveAssessmentTitle($d['mark_config'], $d['mark_config']->slotsForDisplay());
+        $d['scheme_is_active'] = (int) $d['mark_config']->mark_template_id === (int) $d['active_scheme_id'];
+
         return view('pages.support_team.marks.manage', $d);
     }
 
     public function update(Request $req, $term, $class_id, $section_id, $subject_id)
     {
+        if (! $this->teacherCanAccessSection((int) $section_id, (int) $class_id)) {
+            return response()->json(['msg' => __('msg.denied')], 403);
+        }
+
         // Always use the same enforced session/year as manage()/selector().
         $year = $this->resolveActiveYear();
         $p = ['term' => $term, 'my_class_id' => $class_id, 'section_id' => $section_id, 'subject_id' => $subject_id, 'year' => $year];
@@ -454,21 +552,25 @@ class MarkController extends Controller
             $levelName = $mc && $mc->class_type ? $mc->class_type->name : ('Class ID ' . $class_id);
             return response()->json(['msg' => 'Grading scheme not set for Level: ' . $levelName . ', Term: ' . (int) $term . ', Year: ' . $year . '.'], 422);
         }
+        $activeSchemeId = $this->resolveActiveSchemeId($config);
+        if ((int) $config->mark_template_id !== $activeSchemeId) {
+            return response()->json(['msg' => 'This class is locked because the active grading scheme in Settings does not match its blueprint.'], 422);
+        }
         $displaySlots = $config->slotsForDisplay();
-        $activeSlotIndex = (int) ($config->active_slot ?? 0);
-        $activeKey = null;
-        $activeMax = 0;
-        foreach ($displaySlots as $s) {
-            if (($s['slot_index'] ?? 0) === $activeSlotIndex) {
-                $activeKey = $s['key'];
-                $activeMax = (int) ($s['max'] ?? 0);
-                break;
-            }
+        $activeAssessmentTitle = $this->resolveActiveAssessmentTitle($config, $displaySlots);
+        $editableSlotKeys = $this->editableSlotKeys($displaySlots, $activeAssessmentTitle);
+        if (empty($editableSlotKeys)) {
+            return response()->json(['msg' => 'No editable assessment matches the active title configured in Settings.'], 422);
         }
-        $slotMax = [];
+
+        $slotMeta = [];
         foreach ($displaySlots as $s) {
-            $slotMax[$s['key']] = (int) ($s['max'] ?? 0);
+            $slotMeta[$s['key']] = [
+                'max' => (int) ($s['max'] ?? 0),
+                'label' => trim((string) ($s['label'] ?? $s['key'])),
+            ];
         }
+        $lockedSlotKeys = array_values(array_diff(array_keys($slotMeta), $editableSlotKeys));
 
         $d = $d3 = $all_st_ids = [];
         $marks = $this->exam->getMark($p);
@@ -481,34 +583,45 @@ class MarkController extends Controller
             // Build payload dynamically from the active template slot keys.
             // This keeps marks entry compatible with templates that have >5 components (t5..t10).
             $d = [];
-            foreach ($slotMax as $key => $_max) {
+            foreach ($slotMeta as $key => $_meta) {
                 $d[$key] = $mk->{$key} ?? null;
             }
             $d['tca'] = 0;
 
-            // Unlock: allow saving scores for ALL assessment inputs (t1..tN + exm).
-            // Inputs are named like: {slot_key}_{mark_id}.
-            foreach ($slotMax as $key => $maxAllowed) {
-                $inputKey = $key . '_' . $mk->id;
+            foreach ($lockedSlotKeys as $lockedKey) {
+                $lockedInputKey = $lockedKey . '_' . $mk->id;
+                if (!array_key_exists($lockedInputKey, $mks)) {
+                    continue;
+                }
+
+                $submittedLockedValue = $this->normalizeMarkValue($mks[$lockedInputKey]);
+                $currentLockedValue = $this->normalizeMarkValue($mk->{$lockedKey} ?? null);
+                if ($submittedLockedValue !== $currentLockedValue) {
+                    return response()->json(['msg' => ($slotMeta[$lockedKey]['label'] ?? 'This assessment') . ' is currently locked for editing.'], 422);
+                }
+            }
+
+            foreach ($editableSlotKeys as $editableKey) {
+                $inputKey = $editableKey . '_' . $mk->id;
                 if (!array_key_exists($inputKey, $mks)) {
                     continue;
                 }
 
-                $raw = $mks[$inputKey];
-                $val = ($raw === '' || $raw === null) ? null : (int) $raw;
+                $val = $this->normalizeMarkValue($mks[$inputKey]);
+                $maxAllowed = (int) ($slotMeta[$editableKey]['max'] ?? 0);
 
-                if ($val !== null && ($val < 0 || $val > (int) $maxAllowed)) {
-                    if ($key === 'exm') {
-                        return response()->json(['msg' => __('Exam score must be between 0 and :max', ['max' => (int) $maxAllowed])], 422);
+                if ($val !== null && ($val < 0 || $val > $maxAllowed)) {
+                    if ($editableKey === 'exm') {
+                        return response()->json(['msg' => __('Exam score must be between 0 and :max', ['max' => $maxAllowed])], 422);
                     }
-                    return response()->json(['msg' => __('Score must be between 0 and :max', ['max' => (int) $maxAllowed])], 422);
+                    return response()->json(['msg' => __('Score must be between 0 and :max', ['max' => $maxAllowed])], 422);
                 }
 
-                $d[$key] = $val;
+                $d[$editableKey] = $val;
             }
 
             $tca = 0;
-            foreach ($slotMax as $key => $_max) {
+            foreach ($slotMeta as $key => $_meta) {
                 if ($key === 'exm') {
                     continue;
                 }
@@ -518,7 +631,7 @@ class MarkController extends Controller
                 }
             }
             $exm = $d['exm'] ?? null;
-            $examMax = (int) ($slotMax['exm'] ?? 0);
+            $examMax = (int) ($slotMeta['exm']['max'] ?? 0);
             if ($exm !== null && ($exm < 0 || $exm > $examMax)) {
                 return response()->json(['msg' => __('Exam score must be between 0 and :max', ['max' => $examMax])], 422);
             }
@@ -528,7 +641,7 @@ class MarkController extends Controller
 
             if ($total > $config->totalMax()) {
                 $d['tex' . $term] = null;
-                foreach ($slotMax as $key => $_max) {
+                foreach ($slotMeta as $key => $_meta) {
                     if ($key === 'exm') {
                         continue;
                     }
@@ -695,6 +808,8 @@ class MarkController extends Controller
                 }
                 $d['roster_rows'] = $rosterRows;
                 $d['selected'] = true;
+                $d['has_term2_marks'] = $this->sectionHasTerm2Marks((int) $class_id, (int) $section_id, $year);
+                $d['tabulation_published'] = $this->isTabulationPublished($year, (int) $class_id, (int) $section_id);
 
                 return view('pages.support_team.marks.tabulation.index', $d);
             }
@@ -765,6 +880,20 @@ class MarkController extends Controller
 
     public function print_tabulation($term, $class_id, $section_id)
     {
+        if (!Qs::userIsTeamSA() && !$this->teacherCanAccessSection((int) $section_id, (int) $class_id)) {
+            return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
+        }
+
+        // Support legacy/alternate argument order: {class}/{section}/annual
+        // while keeping the canonical route order {term}/{class}/{section}.
+        if (is_numeric($term) && is_numeric($class_id) && is_string($section_id) && strtolower($section_id) === 'annual') {
+            $actualClassId = (int) $term;
+            $actualSectionId = (int) $class_id;
+            $term = 'annual';
+            $class_id = $actualClassId;
+            $section_id = $actualSectionId;
+        }
+
         $year = $this->resolveActiveYear();
         $isAnnual = is_string($term) && strtolower($term) === 'annual';
 
@@ -780,7 +909,13 @@ class MarkController extends Controller
             $marksTerm2 = $built['marks_term2'];
             $annualStats = $built['annual_stats'];
 
+            $hasTerm2 = $this->sectionHasTerm2Marks((int) $class_id, (int) $section_id, $year);
+            $published = $this->isTabulationPublished($year, (int) $class_id, (int) $section_id);
+
             $d['my_class'] = $mc = $this->my_class->find($class_id);
+            if ($mc) {
+                $mc->loadMissing('teacher');
+            }
             $d['section'] = $this->my_class->findSection($section_id);
             $d['students'] = $this->student->getRecordByUserIDs($st_ids)->get()->sortBy('user.name');
 
@@ -802,6 +937,9 @@ class MarkController extends Controller
             $d['rank_term1'] = $built['rank_term1'];
             $d['rank_term2'] = $built['rank_term2'];
             $d['rank_annual'] = $built['rank_annual'];
+
+            $d['draft_watermark'] = ! $published;
+            $d['published'] = $published;
 
             $rosterRows = [];
             foreach ($d['students'] as $st) {
@@ -934,9 +1072,37 @@ class MarkController extends Controller
         return redirect()->route('dashboard')->with('flash_danger', __('msg.srnf'));
     }
 
-    protected function checkPinVerified($st_id)
+    /**
+     * Resolve requested student user_id from route.
+     * - Students are always bound to their own Auth::id()
+     * - If a student tampers with another ID, abort 403
+     * - Non-students must provide a valid hashed ID
+     */
+    protected function resolveRequestedStudentId($student_id = null): int
     {
-        return Session::has('pin_verified') && Session::get('pin_verified') == $st_id;
+        $authId = (int) Auth::id();
+
+        if (Qs::userIsStudent()) {
+            if ($student_id !== null) {
+                $decoded = Qs::decodeHash($student_id);
+                if ($decoded !== null && (int) $decoded !== $authId) {
+                    abort(403, __('msg.denied'));
+                }
+            }
+
+            return $authId;
+        }
+
+        if ($student_id === null) {
+            abort(404);
+        }
+
+        $decoded = Qs::decodeHash($student_id);
+        if ($decoded === null) {
+            abort(404);
+        }
+
+        return (int) $decoded;
     }
 
     /**
@@ -998,14 +1164,14 @@ class MarkController extends Controller
         $wh1 = ['my_class_id' => $class_id, 'section_id' => $section_id, 'term' => $term1Id, 'year' => $year];
         $wh2 = ['my_class_id' => $class_id, 'section_id' => $section_id, 'term' => $term2Id, 'year' => $year];
 
-        $sub_ids = $this->mark->getSubjectIDs($wh1)
-            ->merge($this->mark->getSubjectIDs($wh2))
-            ->unique()
-            ->values();
-        $st_ids = $this->mark->getStudentIDs($wh1)
-            ->merge($this->mark->getStudentIDs($wh2))
-            ->unique()
-            ->values();
+        $subjects = $this->my_class->findSubjectByClass($class_id);
+        $sub_ids = $subjects ? $subjects->pluck('id') : collect([]);
+
+        $students = $this->student->getRecord(['my_class_id' => $class_id, 'section_id' => $section_id, 'session' => $year])->get();
+        if ($students->count() < 1) {
+            $students = $this->student->getRecord(['my_class_id' => $class_id, 'section_id' => $section_id])->get();
+        }
+        $st_ids = $students->pluck('user_id');
 
         if ($sub_ids->count() < 1 || $st_ids->count() < 1) {
             return null;
@@ -1015,10 +1181,11 @@ class MarkController extends Controller
         $mksTerm2 = $this->exam->getMark($wh2);
 
         $marks_term1 = [];
+        $marks_term2 = [];
+        foreach($st_ids as $stId) { $marks_term1[$stId] = []; $marks_term2[$stId] = []; }
         foreach ($mksTerm1 as $mk) {
             $marks_term1[$mk->student_id][$mk->subject_id] = $mk->tex1 ?? null;
         }
-        $marks_term2 = [];
         foreach ($mksTerm2 as $mk) {
             $marks_term2[$mk->student_id][$mk->subject_id] = $mk->tex2 ?? null;
         }
@@ -1166,6 +1333,79 @@ class MarkController extends Controller
 
         $this->year = $year;
         return $this->year;
+    }
+
+    /**
+     * True if at least one student in the section has Term 2 final marks (tex2) on file.
+     */
+    protected function sectionHasTerm2Marks(int $class_id, int $section_id, string $year): bool
+    {
+        return Mark::query()
+            ->where([
+                'my_class_id' => $class_id,
+                'section_id' => $section_id,
+                'term' => 2,
+                'year' => $year,
+            ])
+            ->whereNotNull('tex2')
+            ->exists();
+    }
+
+    protected function tabulationPublishMap(): array
+    {
+        $row = Setting::where('type', 'tabulation_publish')->first();
+        if (! $row || $row->description === null || $row->description === '') {
+            return [];
+        }
+        $decoded = json_decode($row->description, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    public function isTabulationPublished(string $year, int $classId, int $sectionId): bool
+    {
+        $key = $year.'|'.$classId.'|'.$sectionId;
+        $map = $this->tabulationPublishMap();
+
+        return ! empty($map[$key]);
+    }
+
+    protected function setTabulationPublished(string $year, int $classId, int $sectionId, bool $on): void
+    {
+        $map = $this->tabulationPublishMap();
+        $key = $year.'|'.$classId.'|'.$sectionId;
+        if ($on) {
+            $map[$key] = true;
+        } else {
+            unset($map[$key]);
+        }
+        Setting::updateOrCreate(
+            ['type' => 'tabulation_publish'],
+            ['description' => json_encode($map)]
+        );
+    }
+
+    protected function teacherCanAccessSection(int $sectionId, ?int $classId = null): bool
+    {
+        if (! Qs::userIsTeacher()) {
+            return true;
+        }
+        if ($sectionId < 1) {
+            return false;
+        }
+
+        $section = Section::find($sectionId);
+        if (! $section) {
+            return false;
+        }
+        if ((int) $section->teacher_id !== (int) Auth::id()) {
+            return false;
+        }
+        if ($classId !== null && $classId > 0 && (int) $section->my_class_id !== (int) $classId) {
+            return false;
+        }
+
+        return true;
     }
 
 }

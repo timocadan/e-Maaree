@@ -2,6 +2,12 @@
 @section('page_title', 'Manage Users')
 @section('content')
 
+    @php
+        $staffUserTypes = $user_types->reject(function ($ut) {
+            return strtolower($ut->title) === 'parent';
+        });
+    @endphp
+
     <div class="card" id="users-list-card"
          data-school-name="{{ e(Qs::getSystemName()) }}"
          data-school-address="{{ e(Qs::getSetting('address') ?? '') }}"
@@ -19,7 +25,7 @@
                 <li class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Manage Users</a>
                     <div class="dropdown-menu dropdown-menu-right">
-                        @foreach($user_types as $ut)
+                        @foreach($staffUserTypes as $ut)
                             <a href="#ut-{{ Qs::hash($ut->id) }}" class="dropdown-item" data-toggle="tab">{{ $ut->name }}s</a>
                         @endforeach
                     </div>
@@ -38,7 +44,7 @@
                                         <div class="form-group">
                                             <label for="user_type">Select User: <span class="text-danger">*</span></label>
                                             <select required data-placeholder="Select User" class="form-control select" name="user_type" id="user_type">
-                                                @foreach($user_types as $ut)
+                                                @foreach($staffUserTypes as $ut)
                                                     <option value="{{ Qs::hash($ut->id) }}">{{ $ut->name }}</option>
                                                 @endforeach
                                             </select>
@@ -123,7 +129,7 @@
                     </div>
                 </div>
 
-                @foreach($user_types as $ut)
+                @foreach($staffUserTypes as $ut)
                     <div class="tab-pane fade" id="ut-{{Qs::hash($ut->id)}}">                         <table class="table datatable-user-list table-users-list">
                             <colgroup>
                                 <col style="width: 5%;">

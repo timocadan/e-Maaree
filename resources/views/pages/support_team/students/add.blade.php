@@ -141,7 +141,7 @@
                         </div>
                     </div>
 
-                    {{-- Smart Admission: Parent Name & Phone (autocomplete + resolve or create in backend) --}}
+                    {{-- Smart Admission: Parent Name & Phone/Email (autocomplete + resolve or create in backend) --}}
                     <div class="row mt-3 personal-data-row-2" id="parent-fields-row">
                         <div class="col-md-6">
                             <div class="form-group mb-0 position-relative">
@@ -149,10 +149,16 @@
                                 <input value="{{ old('parent_name') }}" required type="text" id="parent_name" name="parent_name" placeholder="Parent / Guardian full name" class="form-control" autocomplete="off">
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <div class="form-group mb-0 position-relative">
                                 <label class="font-weight-medium">Parent Phone <span class="text-danger">*</span></label>
                                 <input value="{{ old('parent_phone') }}" required type="text" id="parent_phone" name="parent_phone" placeholder="Parent phone number" class="form-control" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group mb-0 position-relative">
+                                <label class="font-weight-medium">Parent Email (Optional)</label>
+                                <input value="{{ old('parent_email') }}" type="email" id="parent_email" name="parent_email" placeholder="Parent email (optional)" class="form-control" autocomplete="off">
                             </div>
                         </div>
                         <div class="col-12 position-relative" style="min-height: 0;">

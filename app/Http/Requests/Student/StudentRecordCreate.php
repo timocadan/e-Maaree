@@ -35,6 +35,7 @@ class StudentRecordCreate extends FormRequest
             'nal_id' => 'sometimes|nullable',
             'parent_name' => 'required|string|min:2|max:150',
             'parent_phone' => 'required|string|min:6|max:20',
+            'parent_email' => 'sometimes|nullable|email|max:100|unique:users,email',
             'my_class_id' => 'required',
             'section_id' => 'required',
             'my_parent_id' => 'sometimes|nullable',
@@ -55,6 +56,7 @@ class StudentRecordCreate extends FormRequest
             'my_parent_id' => 'Parent',
             'parent_name' => 'Parent Name',
             'parent_phone' => 'Parent Phone',
+            'parent_email' => 'Parent Email',
         ];
     }
 

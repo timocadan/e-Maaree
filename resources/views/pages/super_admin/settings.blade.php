@@ -9,9 +9,9 @@
         </div>
 
         <div class="card-body">
-            <form enctype="multipart/form-data" method="post" action="{{ route('settings.update') }}">
+            <form method="post" action="{{ route('settings.update') }}">
                 @csrf @method('PUT')
-            <div class="row">
+            <div class="row align-items-start">
                 <div class="col-md-6 border-right-2 border-right-blue-400">
                         <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">Name of School <span class="text-danger">*</span></label>
@@ -43,18 +43,6 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-lg-3 col-form-label font-weight-semibold">Secondary Phone</label>
-                            <div class="col-lg-9">
-                                <input name="phone2" value="{{ $s['phone2'] ?? '' }}" type="text" class="form-control" placeholder="Secondary phone number">
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <label class="col-lg-3 col-form-label font-weight-semibold">School Website</label>
-                            <div class="col-lg-9">
-                                <input name="website" value="{{ $s['website'] ?? '' }}" type="text" class="form-control" placeholder="https://example-school.com">
-                            </div>
-                        </div>
-                        <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">School Email</label>
                             <div class="col-lg-9">
                                 <input name="system_email" value="{{ $s['system_email'] }}" type="email" class="form-control" placeholder="School Email">
@@ -66,39 +54,19 @@
                                 <input required name="address" value="{{ $s['address'] }}" type="text" class="form-control" placeholder="School Address">
                             </div>
                         </div>
-                        <div class="form-group row">
-                            <label class="col-lg-3 col-form-label font-weight-semibold">This Term Ends</label>
-                            <div class="col-lg-6">
-                                <input name="term_ends" value="{{ $s['term_ends'] }}" type="text" class="form-control date-pick" placeholder="Date Term Ends">
-                            </div>
-                            <div class="col-lg-3 mt-2">
-                                <span class="font-weight-bold font-italic">M-D-Y or M/D/Y </span>
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <label class="col-lg-3 col-form-label font-weight-semibold">Next Term Begins</label>
-                            <div class="col-lg-6">
-                                <input name="term_begins" value="{{ $s['term_begins'] }}" type="text" class="form-control date-pick" placeholder="Date Term Ends">
-                            </div>
-                            <div class="col-lg-3 mt-2">
-                                <span class="font-weight-bold font-italic">M-D-Y or M/D/Y </span>
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="lock_exam" class="col-lg-3 col-form-label font-weight-semibold">Lock Exam</label>
-                            <div class="col-lg-3">
-                                <select class="form-control select" name="lock_exam" id="lock_exam">
-                                    <option {{ $s['lock_exam'] ? 'selected' : '' }} value="1">Yes</option>
-                                    <option {{ $s['lock_exam'] ?: 'selected' }} value="0">No</option>
-                                </select>
-                            </div>
-                            <div class="col-lg-6">
-                                    <span class="font-weight-bold font-italic text-info-800">{{ __('msg.lock_exam') }}</span>
-                            </div>
-                        </div>
                 </div>
                 <div class="col-md-6">
                     {{--Fees--}}
+                    <div class="form-group row">
+                        <label class="col-lg-3 col-form-label font-weight-semibold">School Weekend Days</label>
+                        <div class="col-lg-9">
+                            <select name="weekend_type" class="form-control select-search">
+                                <option value="sat_sun" {{ ($s['weekend_type'] ?? 'sat_sun') === 'sat_sun' ? 'selected' : '' }}>Saturday &amp; Sunday</option>
+                                <option value="thu_fri" {{ ($s['weekend_type'] ?? 'sat_sun') === 'thu_fri' ? 'selected' : '' }}>Thursday &amp; Friday</option>
+                            </select>
+                        </div>
+                    </div>
+
                <fieldset>
                    <legend><strong>Next Term Fees</strong></legend>
                    @foreach($class_types as $ct)
@@ -110,34 +78,6 @@
                    </div>
                    @endforeach
                </fieldset>
-                    <hr class="divider">
-
-                    {{--Logo--}}
-                    <div class="form-group row">
-                        <label class="col-lg-3 col-form-label font-weight-semibold">Change Logo:</label>
-                        <div class="col-lg-9">
-                            <div class="mb-3">
-                                @php
-                                    $logoPath = $s['logo'] ?? '';
-                                    if (!empty($logoPath)) {
-                                        if (strpos($logoPath, 'http') === 0) {
-                                            $logoUrl = $logoPath;
-                                        } else {
-                                            $logoUrl = rtrim(config('app.url'), '/') . '/storage/' . ltrim($logoPath, '/');
-                                        }
-                                    } else {
-                                        $logoUrl = '';
-                                    }
-                                @endphp
-                                @if(!empty($logoUrl))
-                                    <img style="width: 100px; height: 100px; object-fit: contain;" src="{{ $logoUrl }}" alt="School logo">
-                                @else
-                                    <div style="width: 100px; height: 100px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px;">No logo</div>
-                                @endif
-                            </div>
-                            <input name="logo" accept="image/*" type="file" class="file-input" data-show-caption="false" data-show-upload="false" data-fouc>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -156,20 +96,87 @@
         </div>
         <div class="card-body">
             <p class="text-muted small mb-2">Switch which assessment (month/slot) is open for editing school-wide. All other slots become readonly in Marks Entry.</p>
-            <form method="post" action="{{ route('settings.active_slot') }}" class="form-inline">
+            <form method="post" action="{{ route('settings.active_slot') }}" class="row align-items-end">
                 @csrf
                 @method('put')
-                <label class="mr-2 font-weight-semibold">Open for editing:</label>
-                <select name="active_slot" class="form-control form-control-sm mr-2" style="min-width: 140px;">
-                    @for($i = 0; $i <= 5; $i++)
-                        <option value="{{ $i }}" {{ ($current_active_slot ?? 0) == $i ? 'selected' : '' }}>{{ $i === 0 ? 'Slot 1 (Month 1)' : ($i === 1 ? 'Slot 2 (Month 2)' : ($i === 2 ? 'Slot 3 (Month 3)' : ($i === 3 ? 'Slot 4 (Month 4)' : ($i === 4 ? 'Exam' : 'Slot ' . ($i + 1)))) }}</option>
-                    @endfor
-                </select>
-                <button type="submit" class="btn btn-sm" style="background-color: #D32F2F; color: #fff; border-color: #D32F2F;">Set active slot</button>
+                <div class="col-md-4 mb-2">
+                    <label class="font-weight-semibold">Select Grading Scheme</label>
+                    <select id="active-scheme-select" name="active_scheme_id" class="form-control form-control-sm">
+                        <option value="" selected disabled>Choose scheme</option>
+                        @foreach(($assessment_schemes ?? []) as $scheme)
+                            <option value="{{ $scheme['id'] }}" {{ (int) ($current_active_scheme_id ?? 0) === (int) $scheme['id'] ? 'selected' : '' }}>{{ $scheme['name'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="font-weight-semibold">Open for editing</label>
+                    <select id="active-assessment-title-select" name="active_assessment_title" class="form-control form-control-sm">
+                        <option value="" selected disabled>Choose assessment</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <button id="set-active-assessment-btn" type="submit" class="btn btn-sm btn-danger" style="min-width: 180px;">Set active assessment</button>
+                </div>
             </form>
         </div>
     </div>
 
     {{--Settings Edit Ends--}}
 
+@endsection
+
+@section('scripts')
+<script>
+(function () {
+    var schemeSelect = document.getElementById('active-scheme-select');
+    var titleSelect = document.getElementById('active-assessment-title-select');
+    var submitBtn = document.getElementById('set-active-assessment-btn');
+    if (!schemeSelect || !titleSelect || !submitBtn) {
+        return;
+    }
+
+    var schemeMap = @json($scheme_assessment_map ?? []);
+    var currentSchemeId = @json((string) ($current_active_scheme_id ?? ''));
+    var currentTitle = @json($current_active_assessment_title ?? '');
+
+    function populateTitles(selectedSchemeId, preferredTitle) {
+        var titles = schemeMap[String(selectedSchemeId)] || [];
+        titleSelect.innerHTML = '';
+
+        var placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = titles.length ? 'Choose assessment' : 'No assessments in this scheme';
+        placeholder.disabled = true;
+        placeholder.selected = true;
+        titleSelect.appendChild(placeholder);
+
+        titles.forEach(function (title) {
+            var option = document.createElement('option');
+            option.value = title;
+            option.textContent = title;
+            if (preferredTitle && preferredTitle === title) {
+                option.selected = true;
+            }
+            titleSelect.appendChild(option);
+        });
+
+        if (!preferredTitle && titles.length) {
+            titleSelect.value = titles[0];
+        }
+
+        titleSelect.disabled = titles.length === 0;
+        submitBtn.disabled = !selectedSchemeId || titles.length === 0 || !titleSelect.value;
+    }
+
+    schemeSelect.addEventListener('change', function () {
+        populateTitles(schemeSelect.value, '');
+    });
+
+    titleSelect.addEventListener('change', function () {
+        submitBtn.disabled = !schemeSelect.value || !titleSelect.value;
+    });
+
+    populateTitles(currentSchemeId || schemeSelect.value, currentTitle);
+})();
+</script>
 @endsection

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SupportTeam;
 use App\Helpers\Qs;
 use App\Http\Requests\Section\SectionCreate;
 use App\Http\Requests\Section\SectionUpdate;
+use App\Models\Section;
 use App\Repositories\MyClassRepo;
 use App\Http\Controllers\Controller;
 use App\Repositories\UserRepo;
@@ -39,41 +40,30 @@ class SectionController extends Controller
         return Qs::jsonStoreOk();
     }
 
-    public function edit($id)
+    public function edit($section_id)
     {
-        $id = Qs::decodeHash($id);
-        if ($id === null) {
-            abort(404);
-        }
-        $d['s'] = $s = $this->my_class->findSection($id);
+        $d['s'] = $s = Section::findOrFail($section_id);
         $d['teachers'] = $this->user->getUserByType('teacher');
-
-        return is_null($s) ? Qs::goWithDanger('sections.index') :view('pages.support_team.sections.edit', $d);
+        return view('pages.support_team.sections.edit', $d);
     }
 
-    public function update(SectionUpdate $req, $id)
+    public function update(SectionUpdate $req, $section_id)
     {
-        $id = Qs::decodeHash($id);
-        if ($id === null) {
-            abort(404);
-        }
+        $section = Section::findOrFail($section_id);
         $data = $req->only(['name', 'teacher_id']);
-        $this->my_class->updateSection($id, $data);
+        $section->update($data);
 
         return Qs::jsonUpdateOk();
     }
 
-    public function destroy($id)
+    public function destroy($section_id)
     {
-        $id = Qs::decodeHash($id);
-        if ($id === null) {
-            abort(404);
-        }
-        if($this->my_class->isActiveSection($id)){
+        $section = Section::findOrFail($section_id);
+        if((int) $section->active === 1){
             return back()->with('pop_warning', 'Every class must have a default section, You Cannot Delete It');
         }
 
-        $this->my_class->deleteSection($id);
+        $section->delete();
         return back()->with('flash_success', __('msg.del_ok'));
     }
 

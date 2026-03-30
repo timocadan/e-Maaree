@@ -16,14 +16,13 @@
     @endif
 
     <div class="card border-0 shadow-sm scheme-section">
-        <div class="card-header level-header d-flex justify-content-between align-items-center">
-            <h6 class="card-title text-white mb-0">Grading Scheme Templates</h6>
-            <button type="button" class="btn btn-sm btn-light" data-toggle="modal" data-target="#modalAddScheme">
-                <i class="icon-plus2 mr-1"></i> New Scheme
-            </button>
-        </div>
-        <div class="card-body p-4">
-            <p class="text-muted mb-3">Create reusable grading schemes like <strong>Standard 60/40</strong> and map them to levels below.</p>
+        <div class="card-body p-2 pt-0 pb-1 scheme-body-compact">
+            <div class="scheme-toolbar">
+                <button type="button" class="btn btn-sm btn-red scheme-toolbar-btn" data-toggle="modal" data-target="#modalAddScheme">
+                    <i class="icon-plus2 mr-1"></i> New Scheme
+                </button>
+            </div>
+            <p class="text-muted small text-center mb-0 scheme-intro">Create reusable grading schemes like <strong>Standard 60/40</strong> and map them to levels below.</p>
             <div class="scheme-grid">
                 @forelse($templates as $t)
                     @php
@@ -32,7 +31,7 @@
                         foreach($slots as $slot){ $total += (int)($slot['max'] ?? 0); }
                     @endphp
                     <div class="scheme-card">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
                             <div class="scheme-name pr-2">{{ $t->name }}</div>
                             <div class="dropdown">
                                 <a href="#" class="scheme-menu-trigger" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -68,14 +67,14 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm">
-            <div class="card-header level-header d-flex justify-content-between align-items-center">
+    <div class="card border-0 shadow-sm mapping-section">
+            <div class="card-header level-header d-flex justify-content-between align-items-center py-2 px-3">
             <h6 class="card-title text-white mb-0">Levels &amp; Grading Mapping</h6>
             <div class="d-flex align-items-center action-toolbar" style="align-items:center;">
                 <button type="button" class="btn btn-sm btn-red" data-toggle="modal" data-target="#addLevelModal" style="height:34px; display:inline-flex; align-items:center;">Add Level</button>
             </div>
         </div>
-        <div class="card-body p-4">
+        <div class="card-body p-2 pt-1">
             <form method="POST" action="{{ route('levels.mapping.save') }}" id="mappingForm">
                 @csrf
                 <input type="hidden" name="school_year" value="{{ $school_year }}">
@@ -131,7 +130,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="text-right mt-3">
+                <div class="text-right mt-2">
                     <button type="submit" class="btn btn-red">Save Mapping</button>
                 </div>
             </form>
@@ -308,20 +307,79 @@
 
 <style>
     .level-hub .level-header { background: #002147; border: none; }
-    .level-hub .scheme-section { margin-bottom: 40px; }
+    .level-hub { margin-top: -12px; }
+    .level-hub .scheme-section { margin-bottom: 8px; }
     .level-hub .btn-red { background: #D32F2F; color: #fff; border-color: #D32F2F; }
     .level-hub .btn-red:hover { background: #b71c1c; border-color: #b71c1c; color: #fff; }
-    .level-hub .scheme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
-    .level-hub .scheme-card { background: #fff; border: 1px solid #e9ecef; border-radius: 10px; padding: 16px; min-height: 140px; height: 140px; display: flex; flex-direction: column; }
-    .level-hub .scheme-name { font-weight: 600; color: #111827; }
-    .level-hub .scheme-meta { font-size: .8rem; color: #6b7280; margin-top: 6px; }
-    .level-hub .scheme-menu-trigger { color: #6b7280; line-height: 1; padding: 2px 6px; border-radius: 6px; display: inline-block; }
+    .level-hub .scheme-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-bottom: 0;
+    }
+    .level-hub .scheme-body-compact {
+        margin-top: -8px;
+    }
+    .level-hub .scheme-toolbar-btn {
+        flex: 0 0 auto;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        padding: 0.35rem 0.7rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .level-hub .scheme-intro {
+        line-height: 1.25;
+        margin-top: 0 !important;
+        transform: translateY(-12px);
+    }
+    .level-hub .scheme-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+        gap: 10px;
+        margin-top: -16px;
+    }
+    .level-hub .scheme-card {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 10px;
+        min-height: 92px;
+        height: 92px;
+        display: flex;
+        flex-direction: column;
+    }
+    .level-hub .scheme-name {
+        font-weight: 700;
+        font-size: 0.84rem;
+        line-height: 1.25;
+        color: #111827;
+    }
+    .level-hub .scheme-meta {
+        font-size: 11px;
+        line-height: 1.25;
+        color: #6b7280;
+        margin-top: 4px;
+    }
+    .level-hub .scheme-menu-trigger {
+        color: #6b7280;
+        line-height: 1;
+        padding: 1px 4px;
+        border-radius: 4px;
+        display: inline-block;
+        font-size: 0.82rem;
+    }
     .level-hub .scheme-menu-trigger:hover { color: #002147; background: #f8fafc; }
     .level-hub .hub-table thead th { background: #002147; color: #fff; border: none; font-weight: 600; }
     .level-hub .hub-table tbody td { vertical-align: middle; padding-top: 14px; padding-bottom: 14px; }
     .level-hub .table-action-menu { color: #D32F2F; padding: 2px 6px; border-radius: 6px; display: inline-block; line-height: 1; }
     .level-hub .table-action-menu:hover { color: #b71c1c; background: rgba(211, 47, 47, 0.08); }
     .level-hub .action-toolbar .btn { height: 34px; display: inline-flex; align-items: center; }
+    .level-hub .mapping-section .card-body { padding-top: 0.35rem !important; }
     .level-hub .term-select {
         border: 1px solid #d9dee6;
         border-radius: 7px;
@@ -399,6 +457,12 @@
     .level-hub #modalAddScheme .add-slot-btn,
     .level-hub #modalEditScheme .add-slot-btn {
         margin-top: 0.25rem !important;
+    }
+    @media (max-width: 767.98px) {
+        .level-hub { margin-top: -8px; }
+        .level-hub .scheme-toolbar {
+            align-self: flex-end;
+        }
     }
 </style>
 @endsection

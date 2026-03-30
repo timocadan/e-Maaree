@@ -29,7 +29,8 @@
 
 
                             <div class="form-group ">
-                                <input type="text" class="form-control" name="identity" value="{{ old('identity') }}" placeholder="Login ID or Email">
+                                <label class="font-weight-semibold">Username</label>
+                                <input type="text" class="form-control" name="username" value="{{ old('username') }}" placeholder="Username">
                             </div>
 
                             <div class="form-group ">

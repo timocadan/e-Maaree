@@ -3,6 +3,7 @@
     <title>OFFICIAL ANNUAL PROGRESS ROSTER</title>
 </head>
 <body>
+@include('pages.support_team.marks.print.partials.draft_watermark', ['draft_watermark' => $draft_watermark ?? false])
 <div class="container">
     <div id="print">
         <style>

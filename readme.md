@@ -12,6 +12,8 @@
 
 - [Tech stack](#tech-stack)
 - [Architecture](#architecture)
+- [Features & modules](#features--modules)
+- [Authentication](#authentication)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Configuration](#configuration)
@@ -51,6 +53,25 @@
 
 ---
 
+## Features & modules
+
+- **Attendance** — Weekly grid, reports, and dashboard integration (tenant migrations under `database/migrations/tenant/` for `attendances` and related settings).
+- **Marks & tabulation** — Tabulation views, printable marksheets (including annual layouts), roster-style print, assessment locking driven from system settings, and refined web/print styling for marksheets.
+- **Parents** — Dedicated parent user management for staff, plus parent portal views (e.g. children list) aligned with the main layout.
+- **Students** — Profile/record routes for students; marksheet access where configured without extra PIN steps for students/parents as applicable.
+- **UI** — Sidebar/top navigation, support team dashboard, and shared layout updates for a consistent minimal look.
+
+---
+
+## Authentication
+
+Sign-in uses a **`username`** field (not email as the primary login identifier). The login form posts `username` and `password`; `App\Http\Controllers\Auth\LoginController` uses `LoginController::username()` so Laravel’s authentication resolves the user by `username`.
+
+- **Central (landlord)** users: the `users` table includes a `username` column (see migration `2026_03_30_140000_add_username_to_central_users_table.php`). Run `php artisan migrate` on the central database after pulling updates.
+- **Tenant** users: usernames are stored on the tenant `users` table. For existing deployments, you can optionally run `Database\Seeders\UserUsernameSeeder` in tenant context to normalize usernames and align passwords with your policy (run only when you intend to bulk-update users).
+
+---
+
 ## Requirements
 
 - PHP ^7.2 or ^8.0
@@ -82,7 +103,7 @@
 
 4. **Database**
    - Create the database (e.g. `emaaree_db`).
-   - Run central migrations:
+   - Run central migrations (includes landlord `users.username` and any other central tables):
    ```bash
    php artisan migrate
    ```
@@ -96,7 +117,7 @@
    ```bash
    php artisan tenancy:create "My School" school1.localhost --id=school1
    ```
-   This creates the tenant DB and runs tenant migrations. Optionally seed tenants as per your seeders.
+   This creates the tenant DB and runs tenant migrations (including attendance and related tables). Optionally seed tenants as per your seeders. For existing tenants after pulling new code, run tenant migrations from your deployment process (e.g. `php artisan tenants:migrate` if you use the package’s artisan commands).
 
 7. **Front-end assets (optional)**
    ```bash
@@ -169,7 +190,9 @@ php artisan serve --port=8001
 
 ## Default credentials
 
-After `php artisan db:seed`:
+Use the **Username** column on the login form (not necessarily the full email).
+
+After tenant seeding (e.g. `TenantDatabaseSeeder` / `php artisan db:seed` in tenant context, depending on your setup):
 
 | Role | Username | Email | Password |
 |------|----------|--------|----------|
@@ -179,6 +202,8 @@ After `php artisan db:seed`:
 | Parent | parent | parent@parent.com | password |
 | Accountant | accountant | accountant@accountant.com | password |
 | Student | student | student@student.com | password |
+
+**Central (landlord)** accounts depend on how you seed the central database; ensure each central user has a unique `username` set if you create them manually.
 
 **Change all default passwords before any production or shared environment.**
 
